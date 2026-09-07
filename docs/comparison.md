@@ -9,19 +9,26 @@ flattering: where one style wins, it will say so.
 
 ## What each style costs, measured
 
-Both packages cover the same ten journeys and pass. The numbers below are
+Both packages cover the same twenty journeys and pass. The numbers below are
 non-comment, non-blank lines.
 
 |           | `locator-first` | `page-first` |
 | --------- | --------------- | ------------ |
-| source    | 62              | 116          |
-| tests     | 156             | 142          |
-| **total** | **218**         | **258**      |
+| source    | 72              | 186          |
+| tests     | 271             | 244          |
+| **total** | **343**         | **430**      |
 
-`locator-first` is smaller overall, and the split is the interesting part: its
-source is nearly half the size, and its tests are longer. That is the trade
-made visible — the knowledge has to live somewhere, and this style puts more of
-it in the test.
+`locator-first` is smaller overall by 87 lines, and the split is the
+interesting part: its source is under half the size, while its tests are
+longer. That is the trade made visible — the knowledge has to live somewhere,
+and this style puts more of it in the test.
+
+The gap widened as the suite grew. At ten journeys it was 40 lines; at twenty
+it is 87. `page-first` pays a fixed cost per behaviour — a method on a page
+object — where `locator-first` pays it once per selector and then reuses it
+from the test, so the two do not scale the same way. That is a finding about
+the styles rather than about this suite's size, and it is why these figures are
+checked in CI rather than written down once.
 
 ## Where each one wins
 

@@ -66,8 +66,59 @@ export const journeys = [
     smoke: false,
   },
   {
+    id: 'catalogue.sorts-by-name',
+    claim: 'sorting Z-to-A reverses the A-to-Z order exactly',
+    smoke: false,
+  },
+  {
+    id: 'catalogue.opens-product-detail',
+    claim: 'a product name opens its detail page, showing the same name and price',
+    smoke: false,
+  },
+  {
+    id: 'cart.survives-navigation',
+    claim: 'the cart still holds its items after leaving the page and coming back',
+    smoke: false,
+  },
+  {
+    id: 'cart.continue-shopping-returns',
+    claim: 'continue shopping returns to the product list without emptying the cart',
+    smoke: false,
+  },
+  {
+    id: 'checkout.totals-add-up',
+    claim: 'the order summary charges tax on the item total, and the total is their sum',
+    smoke: false,
+  },
+  {
+    id: 'checkout.lists-what-was-ordered',
+    claim: 'the order summary lists exactly the items the cart held',
+    smoke: false,
+  },
+  {
+    id: 'checkout.cancel-keeps-the-cart',
+    claim: 'cancelling checkout returns to the cart with its items intact',
+    smoke: false,
+  },
+  {
+    id: 'auth.protects-pages-behind-login',
+    claim: 'a signed-out visitor asking for a page directly is refused, and told why',
+    smoke: true,
+  },
+  {
+    id: 'auth.sign-out-ends-the-session',
+    claim: 'signing out returns to the form and the page cannot be reached again',
+    smoke: false,
+  },
+  {
     id: 'defect.problem-user-images',
     claim: 'problem_user renders the same image for every product — a defect the suite must catch',
+    smoke: false,
+  },
+  {
+    id: 'defect.reset-leaves-buttons-stale',
+    claim:
+      'Reset App State clears the cart badge but leaves add buttons reading Remove — the page contradicts itself',
     smoke: false,
   },
 ] as const satisfies readonly Journey[]

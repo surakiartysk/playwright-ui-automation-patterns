@@ -17,5 +17,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      # still enforces the structural rules. The full check is a local gate.
+      # `check:claims` derives every published figure from the tree, so CI is
+      # exactly where it belongs.
       - run: pnpm verify

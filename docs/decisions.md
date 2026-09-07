@@ -107,6 +107,57 @@ between these two styles is a readability and maintenance decision, not a
 correctness one. What caught the shallow assertion was mutation testing, which
 is orthogonal to how the suite is organised.
 
+## 7. The numbers in the docs are checked, because they were already wrong
+
+This repo shipped without a claims checker, unlike both of its siblings, and
+repeated their mistake within a day. The journey set doubled from ten to
+twenty; the README still said ten, and `comparison.md` still published line
+counts measured when each package had half the tests — its central claim,
+wrong by roughly 50%.
+
+Nothing was lying. Someone wrote true numbers and the tree moved underneath
+them, which is what always happens to a figure written in prose.
+
+`check:claims` derives every published number from the tree — journeys from the
+shared package's declaration, tests from the spec files, line counts by the
+same non-comment measure the table claims to use — and fails when a document
+disagrees. It earned its place twice during the change that added it: once
+catching the original drift, and again when hoisting a single helper function
+moved a total from 342 to 343 and the doc had to follow.
+
+### Trade-offs
+
+- **It parses prose with regexes**, which is fragile in the ordinary way. The
+  journey-count check is anchored to a list of number words so that "the same
+  browser journeys" is not mistaken for a count — a false positive it produced
+  on the first run.
+- **It cannot check the reasoning**, only the figures. A comparison whose
+  numbers are right and whose conclusion is wrong passes cleanly.
+- **The line-count check is exact**, so a refactor that changes no behaviour
+  still fails CI until the table is updated. That is deliberate: a figure
+  nobody has to maintain is a figure nobody can trust.
+
+## 8. Two tests asserted less than they claimed
+
+Found by reviewing the repo rather than by anything failing, which is the point
+worth recording — both were green, and both would have stayed green through the
+bug they existed to catch.
+
+**The reset defect** asserted `toBeGreaterThan(0)` stale buttons after adding
+one item. Probing the application shows the count tracks the cart: add three,
+three stay stale. The assertion therefore passed whether the application left
+one behind or twenty, while its own failure message claimed to describe the
+defect precisely. It now adds three and asserts exactly three.
+
+**Cancelling checkout** asserted the cart still held one item — the one item
+`beforeEach` had added. That assertion is identical whether cancel preserves
+the cart or wipes it on a page it never touched, because the count of one was
+never at risk. It now adds a second item first and names both products, so the
+count can only be right if cancel preserved what was there.
+
+Both were mutation-tested afterwards: replacing cancel with an explicit
+emptying of the cart turns the new test red, and the old one would have passed.
+
 ## How to add a decision
 
 Write it when the reasoning is still fresh, and include the cost. If the

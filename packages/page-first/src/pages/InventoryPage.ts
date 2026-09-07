@@ -62,6 +62,58 @@ export class InventoryPage {
     await expect(badge).toHaveText(String(count))
   }
 
+  async sortByNameAscending(): Promise<void> {
+    await this.page.getByTestId('product-sort-container').selectOption('az')
+  }
+
+  async sortByNameDescending(): Promise<void> {
+    await this.page.getByTestId('product-sort-container').selectOption('za')
+  }
+
+  async names(): Promise<string[]> {
+    return this.page.getByTestId('inventory-item-name').allTextContents()
+  }
+
+  async openFirstProduct(): Promise<{ name: string; price: string }> {
+    const name = (await this.page.getByTestId('inventory-item-name').first().textContent()) ?? ''
+    const price = (await this.page.getByTestId('inventory-item-price').first().textContent()) ?? ''
+    await this.page.getByTestId('inventory-item-name').first().click()
+    return { name, price }
+  }
+
+  async expectShowingProduct(product: { name: string; price: string }): Promise<void> {
+    await expect(this.page).toHaveURL(/inventory-item\.html/)
+    await expect(this.page.getByTestId('inventory-item-name')).toHaveText(product.name)
+    await expect(this.page.getByTestId('inventory-item-price')).toHaveText(product.price)
+  }
+
+  /*
+   * The button, not the `data-test` element: `open-menu` sits on the <img>
+   * inside the button, and the button intercepts the click.
+   */
+  async openMenu(): Promise<void> {
+    await this.page.locator('#react-burger-menu-btn').click()
+  }
+
+  async signOut(): Promise<void> {
+    await this.openMenu()
+    await this.page.getByTestId('logout-sidebar-link').click()
+  }
+
+  async resetAppState(): Promise<void> {
+    await this.openMenu()
+    await this.page.getByTestId('reset-sidebar-link').click()
+  }
+
+  /** How many buttons still read Remove — see the reset defect. */
+  async staleRemoveButtonCount(): Promise<number> {
+    return this.page.locator('[data-test^="remove"]').count()
+  }
+
+  async expectProductInCart(product: string): Promise<void> {
+    await expect(this.page.getByTestId(`remove-${product}`)).toBeVisible()
+  }
+
   async expectCartHolds(count: number): Promise<void> {
     await expect(this.page.getByTestId('inventory-item')).toHaveCount(count)
   }
