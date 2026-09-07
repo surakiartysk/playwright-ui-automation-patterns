@@ -8,6 +8,12 @@ playwright-report/
 blob-report/
 allure-results/
 allure-report/
+# The trend file, generated. Committing it would ship run data from whichever
+# machine built the report last — noise to a reader, conflicts to a
+# contributor. A real deployment keeps history in CI instead.
+allure-history.json
+# The json reporter, written only in CI for the on-demand callback.
+results.json
 .auth/
 
 .env
