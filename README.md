@@ -43,6 +43,31 @@ pnpm test:page         # the other
 pnpm verify            # format, lint, types, leak, journey parity, tests
 ```
 
+## Running it from the dashboard
+
+`.github/workflows/on-demand.yml` accepts a dispatch, runs the chosen slice,
+builds one merged Allure report from both packages, uploads it, and posts a
+signed result back — the same contract the API suite honours, so one dashboard
+drives both.
+
+```
+style   both | locator-first | page-first
+scope   all | smoke | auth | catalogue | cart | checkout | defects
+```
+
+`scope` is a spec file for every value but `all` and `smoke`. That is not
+cosmetic: these journeys are grouped by file rather than by tag, and
+`--grep @auth` would match nothing — which Playwright reports as a **success
+with zero tests**, so the dashboard would record a green run that asserted
+nothing.
+
+The report steps are skipped unless a caller passed a `run_id`, so a
+hand-started run costs nothing extra. Reporting back also needs
+`DASHBOARD_WEBHOOK_URL` (a repository variable) and `DASHBOARD_WEBHOOK_SECRET`;
+the report itself additionally needs `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID`. Without them the run still reports its numbers — it
+just has no report link.
+
 ## What is written down
 
 | Document                            | What it argues                                                               |

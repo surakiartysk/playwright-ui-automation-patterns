@@ -14,6 +14,8 @@
     "test:locator": "pnpm --filter @swag-lab/locator-first test",
     "test:page": "pnpm --filter @swag-lab/page-first test",
     "test:smoke": "pnpm -r --sequential test:smoke",
+    "allure": "node scripts/allure-report.mjs",
+    "allure:open": "node scripts/allure-report.mjs --open",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "prettier --write .",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.4.1",
+    "allure": "^3.15.0",
     "allure-playwright": "^3.12.0",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.6",

@@ -1,0 +1,260 @@
+name: On-demand
+
+# Run a chosen slice of the UI suite, without pushing anything.
+#
+# The counterpart to the API suite's workflow of the same name, and
+# deliberately the same shape: the dashboard dispatches both, and a body that
+# branched per suite would be a second thing to keep in step. GitHub rejects a
+# dispatch carrying an input a workflow does not declare — the whole request
+# fails rather than the extra being ignored — so the three input names below
+# are a contract with the dashboard, not a convenience.
+#
+# What differs from the API suite is what the inputs mean. There, `scope` is a
+# tag. Here a slice is a spec file, because the journeys are grouped by file
+# rather than by tag, so `scope` selects a file and only `smoke` is a tag.
+on:
+  workflow_dispatch:
+    inputs:
+      style:
+        description: 'Which package to run'
+        required: true
+        default: 'both'
+        type: choice
+        options: [both, locator-first, page-first]
+      scope:
+        description: 'Journey group, or a tag. "all" runs everything.'
+        required: true
+        default: 'smoke'
+        type: choice
+        # Keep in sync with the spec filenames and the tags used in them.
+        options: [all, smoke, auth, catalogue, cart, checkout, defects]
+      workers:
+        description: 'Parallel workers'
+        required: false
+        default: '4'
+        type: string
+      run_id:
+        description: 'Caller run id. Set by the dashboard; leave blank when running by hand.'
+        required: false
+        default: ''
+        type: string
+
+  repository_dispatch:
+    types: [run-tests]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false # an explicit request should not cancel another
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: ${{ github.event.inputs.style || 'both' }} / ${{ github.event.inputs.scope || 'smoke' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Only Chromium, and only the browser this suite runs. `--with-deps`
+      # because the runner has none of the shared libraries a browser needs.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # Inputs arrive from two shapes — a form, or a payload — so they are
+      # normalised once here rather than in every step below.
+      - name: Resolve inputs
+        id: opts
+        run: |
+          STYLE="${{ github.event.inputs.style || github.event.client_payload.style || 'both' }}"
+          SCOPE="${{ github.event.inputs.scope || github.event.client_payload.scope || 'smoke' }}"
+          WORKERS="${{ github.event.inputs.workers || github.event.client_payload.workers || '4' }}"
+          RUN_ID="${{ github.event.inputs.run_id || github.event.client_payload.run_id || '' }}"
+
+          # Two kinds of slice, and they select differently.
+          #
+          # `smoke` is a tag and greps. Every other value names a spec file,
+          # because these journeys are grouped by file — `--grep @auth` would
+          # match nothing at all, and Playwright reports "no tests found" as a
+          # SUCCESS with zero tests. The dashboard would record a green run
+          # that asserted nothing, which is the worst failure available here.
+          case "$SCOPE" in
+            all)   SELECT="" ;;
+            smoke) SELECT="--grep @smoke" ;;
+            *)     SELECT="tests/$SCOPE.spec.ts" ;;
+          esac
+
+          # `both` names the two test packages rather than using `-r`.
+          #
+          # `-r` runs in EVERY workspace package, and `shared-journeys` holds
+          # the journey list and the user table — it has no Playwright, so
+          # `pnpm -r exec playwright` aborts the whole run before a single test
+          # executes. The API suite hit exactly this; it is written down there
+          # too.
+          #
+          # No `--workspace-concurrency=1` here, unlike the API suite: that
+          # exists because both of its packages bind port 4010 for their own
+          # mock. This suite drives a hosted site and binds nothing, so the two
+          # packages can run at once.
+          case "$STYLE" in
+            both) FILTER="--filter @swag-lab/locator-first --filter @swag-lab/page-first" ;;
+            *)    FILTER="--filter @swag-lab/$STYLE" ;;
+          esac
+
+          echo "select=$SELECT"   >> "$GITHUB_OUTPUT"
+          echo "filter=$FILTER"   >> "$GITHUB_OUTPUT"
+          echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
+          echo "run_id=$RUN_ID"   >> "$GITHUB_OUTPUT"
+          echo "Running $STYLE with scope $SCOPE on $WORKERS workers"
+
+      - name: Run tests
+        id: run
+        # A red suite must still reach the callback below — a run that fails
+        # without reporting leaves the caller's dashboard stuck on "running"
+        # forever. The verdict is carried in an output and re-raised at the end.
+        #
+        # `allure-playwright` is named explicitly rather than left to the
+        # config: `--reporter` *replaces* the config's list rather than adding
+        # to it, so omitting it here would switch off the very reporter this
+        # job goes on to upload.
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
+          CI: 'true'
+        run: |
+          pnpm ${{ steps.opts.outputs.filter }} exec playwright test \
+            ${{ steps.opts.outputs.select }} \
+            --workers=${{ steps.opts.outputs.workers }} \
+            --reporter=list,json,allure-playwright || echo "failed=true" >> "$GITHUB_OUTPUT"
+
+      # Totals for the callback, read from Playwright's own JSON rather than
+      # scraped from stdout.
+      - name: Summarise
+        if: always() && steps.opts.outputs.run_id != ''
+        id: totals
+        run: |
+          node -e '
+            const { readdirSync, existsSync, readFileSync } = require("fs")
+            let total = 0, passed = 0, failed = 0
+            for (const pkg of readdirSync("packages")) {
+              const f = `packages/${pkg}/results.json`
+              if (!existsSync(f)) continue
+              const walk = (suites) => {
+                for (const suite of suites ?? []) {
+                  for (const spec of suite.specs ?? []) {
+                    for (const test of spec.tests ?? []) {
+                      total++
+                      const ok = test.results?.some((r) => r.status === "passed")
+                      if (ok) passed++; else failed++
+                    }
+                  }
+                  walk(suite.suites)
+                }
+              }
+              walk(JSON.parse(readFileSync(f, "utf8")).suites)
+            }
+            const out = require("fs").createWriteStream(process.env.GITHUB_OUTPUT, { flags: "a" })
+            out.write(`total=${total}\npassed=${passed}\nfailed=${failed}\n`)
+          '
+
+      # Build the report the dashboard will serve.
+      #
+      # Both packages' results merge into one report, because the question this
+      # repo asks is how the two styles compare. Only built when a caller is
+      # waiting for it; a hand-started run reads its results from the log.
+      - name: Build the Allure report
+        if: always() && steps.opts.outputs.run_id != '' && vars.DASHBOARD_WEBHOOK_URL != ''
+        run: pnpm allure
+
+      # Upload it straight into the dashboard's R2 bucket, for the same reasons
+      # the API suite does: the token is scoped to that one bucket, and a
+      # single-file report is one PUT rather than several hundred.
+      #
+      # `continue-on-error`: a failed upload must not skip the callback below.
+      # A run whose numbers arrive without a report is worth more than a run
+      # the dashboard never hears about at all.
+      - name: Upload the report to the dashboard
+        id: upload
+        if: always() && steps.opts.outputs.run_id != '' && vars.DASHBOARD_WEBHOOK_URL != ''
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RUN_ID: ${{ steps.opts.outputs.run_id }}
+        run: node .github/scripts/upload-report.mjs allure-report/index.html "runs/$RUN_ID/index.html"
+
+      # Report the result back to whoever asked for the run.
+      #
+      # Signed over `timestamp.body`, not the body alone: a captured callback
+      # would otherwise be replayable forever. The receiving end enforces a
+      # five-minute window — see the dashboard's routes/webhook.ts.
+      #
+      # Runs after the upload so `reportPath` is only claimed once the bytes
+      # are actually there — a path pointing at nothing is a link that 404s.
+      - name: Report the result
+        if: always() && steps.opts.outputs.run_id != '' && vars.DASHBOARD_WEBHOOK_URL != ''
+        env:
+          WEBHOOK_URL: ${{ vars.DASHBOARD_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.DASHBOARD_WEBHOOK_SECRET }}
+          RUN_ID: ${{ steps.opts.outputs.run_id }}
+          STATUS: ${{ steps.run.outputs.failed == 'true' && 'failed' || 'passed' }}
+          TOTAL: ${{ steps.totals.outputs.total }}
+          PASSED: ${{ steps.totals.outputs.passed }}
+          FAILED: ${{ steps.totals.outputs.failed }}
+          REPORT_PATH: ${{ steps.upload.outcome == 'success' && format('runs/{0}/index.html', steps.opts.outputs.run_id) || '' }}
+          # What was actually run, so a result can be traced back to a tree.
+          SUITE_SHA: ${{ github.sha }}
+        run: |
+          SUITE_VERSION=$(node -p "require('./package.json').version")
+          export SUITE_VERSION
+
+          BODY=$(node -e '
+            process.stdout.write(JSON.stringify({
+              runId: process.env.RUN_ID,
+              status: process.env.STATUS,
+              total: Number(process.env.TOTAL || 0),
+              passed: Number(process.env.PASSED || 0),
+              failed: Number(process.env.FAILED || 0),
+              ...(process.env.REPORT_PATH ? { reportPath: process.env.REPORT_PATH } : {}),
+              workflowUrl: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              suiteVersion: process.env.SUITE_VERSION,
+              suiteSha: process.env.SUITE_SHA,
+            }))
+          ')
+
+          TS=$(date +%s)
+          SIG=$(printf '%s.%s' "$TS" "$BODY" \
+            | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" \
+            | sed 's/^.* //')
+
+          curl -sS --fail-with-body -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Timestamp: $TS" \
+            -H "X-Webhook-Signature: $SIG" \
+            -d "$BODY"
+
+      # Re-raise the verdict last, so everything above still runs on a red suite.
+      - name: Fail if the suite failed
+        if: always() && steps.run.outputs.failed == 'true'
+        run: |
+          echo "The suite reported failures — see the run above."
+          exit 1
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/*/playwright-report/
+          retention-days: 7
