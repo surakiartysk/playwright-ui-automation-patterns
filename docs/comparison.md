@@ -14,17 +14,17 @@ non-comment, non-blank lines.
 
 |           | `locator-first` | `page-first` |
 | --------- | --------------- | ------------ |
-| source    | 72              | 186          |
+| source    | 81              | 190          |
 | tests     | 271             | 244          |
-| **total** | **343**         | **430**      |
+| **total** | **352**         | **434**      |
 
-`locator-first` is smaller overall by 87 lines, and the split is the
+`locator-first` is smaller overall by 82 lines, and the split is the
 interesting part: its source is under half the size, while its tests are
 longer. That is the trade made visible — the knowledge has to live somewhere,
 and this style puts more of it in the test.
 
 The gap widened as the suite grew. At ten journeys it was 40 lines; at twenty
-it is 87. `page-first` pays a fixed cost per behaviour — a method on a page
+it is 82. `page-first` pays a fixed cost per behaviour — a method on a page
 object — where `locator-first` pays it once per selector and then reuses it
 from the test, so the two do not scale the same way. That is a finding about
 the styles rather than about this suite's size, and it is why these figures are

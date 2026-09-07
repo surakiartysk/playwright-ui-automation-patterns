@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { PASSWORD, type User } from '@swag-lab/shared-journeys'
 import { loginLocators } from '../locators/login.js'
 import { inventoryLocators } from '../locators/inventory.js'
@@ -30,6 +30,35 @@ export async function removeFromCart(page: Page, product: string): Promise<void>
 
 export async function openCart(page: Page): Promise<void> {
   await inventoryLocators.cartLink(page).click()
+}
+
+/**
+ * Opens the burger menu, and does not return until it is actually open.
+ *
+ * On a loaded CI runner the first click sometimes does nothing at all — it
+ * lands before React has bound its handler, so the state never changes and the
+ * panel never opens. Measured over six CI runs: two failed this way, a 33%
+ * rate. The signature is unmistakable — `element is not visible` repeated for
+ * the full 30s timeout, then a retry passing in under two seconds. Not a slow
+ * menu; a menu that never opened.
+ *
+ * `toPass` rather than a longer timeout or a sleep: waiting longer cannot help
+ * a click that was swallowed, and a sleep would slow every run to pay for a
+ * case that happens one time in three. The happy path still costs one click
+ * and the ~50ms the panel takes to report itself open, measured locally over
+ * ten runs.
+ *
+ * It lives here rather than in `inventoryLocators` because a locator in this
+ * package is a locator — resolving one must not click anything. This is
+ * behaviour composed from locators, which is what this file is for.
+ */
+export async function openMenu(page: Page): Promise<void> {
+  await expect(async () => {
+    await inventoryLocators.menu(page).click()
+    await expect(inventoryLocators.menuPanel(page)).toHaveAttribute('aria-hidden', 'false', {
+      timeout: 1_000,
+    })
+  }).toPass({ timeout: 10_000 })
 }
 
 /** Fills the address step. `postalCode` is optional so a test can omit it. */

@@ -90,9 +90,33 @@ export class InventoryPage {
   /*
    * The button, not the `data-test` element: `open-menu` sits on the <img>
    * inside the button, and the button intercepts the click.
+   *
+   * Clicked until the menu is actually open, because on a loaded CI runner the
+   * first click sometimes does nothing at all — landing before React has bound
+   * its handler, so the state never changes and the panel never opens.
+   *
+   * Measured over six CI runs: two failed this way, a 33% rate. The signature
+   * is unmistakable — `element is not visible` repeated for the full 30s
+   * timeout, then a retry passing in under two seconds. Not a slow menu; a
+   * menu that never opened.
+   *
+   * `toPass` rather than a longer timeout or a sleep: waiting longer cannot
+   * help a click that was swallowed, and a sleep would slow every run to pay
+   * for a case that happens one time in three. The happy path still costs one
+   * click and the ~50ms the panel takes to report itself open, measured
+   * locally over ten runs.
+   *
+   * `aria-hidden` is the application's own statement that the menu is open. It
+   * flips well before the slide finishes, which is the point: this waits for
+   * the click to have *registered*, and Playwright's own actionability check
+   * handles the rest before it clicks an entry.
    */
   async openMenu(): Promise<void> {
-    await this.page.locator('#react-burger-menu-btn').click()
+    const panel = this.page.locator('.bm-menu-wrap')
+    await expect(async () => {
+      await this.page.locator('#react-burger-menu-btn').click()
+      await expect(panel).toHaveAttribute('aria-hidden', 'false', { timeout: 1_000 })
+    }).toPass({ timeout: 10_000 })
   }
 
   async signOut(): Promise<void> {
