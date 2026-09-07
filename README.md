@@ -54,9 +54,15 @@ pnpm verify            # format, lint, types, leak, journey parity, tests
 
 ## Status
 
-Both suites cover all ten journeys — 10 tests each, green, every assertion
+Both suites cover all twenty journeys — 20 tests each, green, every assertion
 proven able to fail by mutation before it was believed.
 
-What is not done: the journey set is deliberately small, and the sort test
-covers one direction of one control. Broadening it is the next work, and
-`check:journeys` will hold both packages to whatever is added.
+Two of those journeys exist to catch defects the application ships on purpose:
+`problem_user` rendering one image for six products, and Reset App State
+clearing the cart badge while leaving every add button reading Remove. A suite
+that only walks the happy path proves it can drive a browser, not that it can
+catch anything.
+
+What is not done: the sort tests cover two of the four orderings the control
+offers, and nothing exercises the responsive layout. `check:journeys` holds
+both packages to whatever is added next.

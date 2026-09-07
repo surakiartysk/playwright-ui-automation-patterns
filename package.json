@@ -21,7 +21,8 @@
     "type-check": "pnpm -r type-check",
     "check:leak": "node scripts/check-leak.mjs",
     "check:journeys": "node scripts/check-journeys.mjs",
-    "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:leak && pnpm check:journeys && pnpm test"
+    "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:leak && pnpm check:journeys && pnpm check:claims && pnpm test",
+    "check:claims": "node scripts/check-claims.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

@@ -1,6 +1,7 @@
 import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 import { inventoryLocators } from '../src/locators/inventory.js'
+import { checkoutLocators } from '../src/locators/checkout.js'
 import { signIn, addToCart, removeFromCart, openCart } from '../src/pages/index.js'
 
 const BACKPACK = 'sauce-labs-backpack'
@@ -47,5 +48,30 @@ test.describe('The cart', () => {
 
     await openCart(page)
     await expect(inventoryLocators.items(page)).toHaveCount(0)
+  })
+
+  test(`${journey('cart.survives-navigation')} — the cart still holds its items after leaving and returning`, async ({
+    page,
+  }) => {
+    await addToCart(page, BACKPACK)
+    await openCart(page)
+
+    // Leave properly, by navigation rather than by going back: a cart kept
+    // only in the page's memory survives history but not a fresh load.
+    await page.goto('/inventory.html')
+
+    await expect(inventoryLocators.cartBadge(page)).toHaveText('1')
+    await expect(inventoryLocators.removeFromCart(page, BACKPACK)).toBeVisible()
+  })
+
+  test(`${journey('cart.continue-shopping-returns')} — continue shopping returns to the list without emptying the cart`, async ({
+    page,
+  }) => {
+    await addToCart(page, BACKPACK)
+    await openCart(page)
+    await checkoutLocators.continueShopping(page).click()
+
+    await expect(page).toHaveURL(/inventory\.html/)
+    await expect(inventoryLocators.cartBadge(page)).toHaveText('1')
   })
 })

@@ -10,6 +10,14 @@ export const checkoutLocators = {
   continue: (page: Page): Locator => page.getByTestId('continue'),
   finish: (page: Page): Locator => page.getByTestId('finish'),
 
+  cancel: (page: Page): Locator => page.getByTestId('cancel'),
+  continueShopping: (page: Page): Locator => page.getByTestId('continue-shopping'),
+
+  /** The order summary's three money lines, as rendered. */
+  itemTotal: (page: Page): Locator => page.getByTestId('subtotal-label'),
+  tax: (page: Page): Locator => page.getByTestId('tax-label'),
+  total: (page: Page): Locator => page.getByTestId('total-label'),
+
   error: (page: Page): Locator => page.getByTestId('error'),
   completeHeader: (page: Page): Locator => page.getByTestId('complete-header'),
 }

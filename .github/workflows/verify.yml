@@ -19,4 +19,6 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       # `check:leak` runs without its word list here — it says so loudly and
       # still enforces the structural rules. The full check is a local gate.
+      # `check:claims` has no such caveat: it derives every published figure
+      # from the tree, so CI is exactly where it belongs.
       - run: pnpm verify

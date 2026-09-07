@@ -3,6 +3,9 @@ import { users } from '@swag-lab/shared-journeys'
 import { inventoryLocators } from '../src/locators/inventory.js'
 import { signIn } from '../src/pages/index.js'
 
+/** "$29.99" as 29.99, for comparing prices numerically. */
+const value = (p: string) => Number(p.replace('$', ''))
+
 test.describe('The product list', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page, users.standard)
@@ -38,13 +41,41 @@ test.describe('The product list', () => {
     await inventoryLocators.sort(page).selectOption('lohi')
     const after = await priceText()
 
-    const value = (p: string) => Number(p.replace('$', ''))
     const ascending = [...after].map(value)
 
     // Sorted...
-    expect(ascending).toEqual([...ascending].sort((a, b) => a - b))
+    expect(ascending).toEqual(ascending.toSorted((a, b) => a - b))
     // ...and still the same products. A sort that drops an item passes the
     // check above while being badly broken.
-    expect([...after].sort()).toEqual([...before].sort())
+    expect(after.toSorted()).toEqual(before.toSorted())
+  })
+
+  test(`${journey('catalogue.sorts-by-name')} — sorting Z-to-A reverses the A-to-Z order exactly`, async ({
+    page,
+  }) => {
+    await inventoryLocators.sort(page).selectOption('az')
+    const ascending = await inventoryLocators.names(page).allTextContents()
+
+    await inventoryLocators.sort(page).selectOption('za')
+    const descending = await inventoryLocators.names(page).allTextContents()
+
+    // Exactly reversed, not merely "different order". A sort that shuffles
+    // passes a weaker check while being wrong.
+    expect(descending).toEqual(ascending.toReversed())
+  })
+
+  test(`${journey('catalogue.opens-product-detail')} — a product name opens its detail page`, async ({
+    page,
+  }) => {
+    const firstName = await inventoryLocators.names(page).first().textContent()
+    const firstPrice = await inventoryLocators.prices(page).first().textContent()
+
+    await inventoryLocators.names(page).first().click()
+
+    await expect(page).toHaveURL(/inventory-item\.html/)
+    // The detail page must show the same product, not just *a* product — the
+    // classic off-by-one in a list-to-detail link.
+    await expect(page.getByTestId('inventory-item-name')).toHaveText(firstName ?? '')
+    await expect(page.getByTestId('inventory-item-price')).toHaveText(firstPrice ?? '')
   })
 })

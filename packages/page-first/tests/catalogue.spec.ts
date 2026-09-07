@@ -1,6 +1,9 @@
 import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 
+/** "$29.99" as 29.99, for comparing prices numerically. */
+const value = (p: string) => Number(p.replace('$', ''))
+
 test.describe('The product list', () => {
   test.beforeEach(async ({ login }) => {
     await login.signIn(users.standard)
@@ -22,11 +25,32 @@ test.describe('The product list', () => {
     await inventory.sortByPriceAscending()
     const after = await inventory.prices()
 
-    const value = (p: string) => Number(p.replace('$', ''))
     const ascending = after.map(value)
 
-    expect(ascending).toEqual([...ascending].sort((a, b) => a - b))
+    expect(ascending).toEqual(ascending.toSorted((a, b) => a - b))
     // A sort that drops an item passes the check above while being broken.
-    expect([...after].sort()).toEqual([...before].sort())
+    expect(after.toSorted()).toEqual(before.toSorted())
+  })
+
+  test(`${journey('catalogue.sorts-by-name')} — sorting Z-to-A reverses the A-to-Z order exactly`, async ({
+    inventory,
+  }) => {
+    await inventory.sortByNameAscending()
+    const ascending = await inventory.names()
+
+    await inventory.sortByNameDescending()
+    const descending = await inventory.names()
+
+    // Exactly reversed, not merely a different order.
+    expect(descending).toEqual(ascending.toReversed())
+  })
+
+  test(`${journey('catalogue.opens-product-detail')} — a product name opens its detail page`, async ({
+    inventory,
+  }) => {
+    const product = await inventory.openFirstProduct()
+    // The same product, not just *a* product — the classic list-to-detail
+    // off-by-one.
+    await inventory.expectShowingProduct(product)
   })
 })

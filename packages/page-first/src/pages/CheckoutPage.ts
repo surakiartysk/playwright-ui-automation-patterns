@@ -31,6 +31,39 @@ export class CheckoutPage {
     await expect(this.page.getByTestId('complete-header')).toHaveText('Thank you for your order!')
   }
 
+  async cancel(): Promise<void> {
+    await this.page.getByTestId('cancel').click()
+  }
+
+  async continueShopping(): Promise<void> {
+    await this.page.getByTestId('continue-shopping').click()
+  }
+
+  /** The three money lines, as numbers. */
+  async summaryTotals(): Promise<{ itemTotal: number; tax: number; total: number }> {
+    const money = async (id: string) =>
+      Number(((await this.page.getByTestId(id).textContent()) ?? '').replace(/[^0-9.]/g, ''))
+    return {
+      itemTotal: await money('subtotal-label'),
+      tax: await money('tax-label'),
+      total: await money('total-label'),
+    }
+  }
+
+  async expectOrderLists(names: string[]): Promise<void> {
+    await expect(this.page.getByTestId('inventory-item')).toHaveCount(names.length)
+    for (const name of names) {
+      await expect(
+        this.page.getByTestId('inventory-item-name').filter({ hasText: name }),
+      ).toHaveCount(1)
+    }
+  }
+
+  async expectBackInCartWith(count: number): Promise<void> {
+    await expect(this.page).toHaveURL(/cart\.html/)
+    await expect(this.page.getByTestId('inventory-item')).toHaveCount(count)
+  }
+
   /** Both halves: the message, and that the step did not advance. */
   async expectRefusedAtAddress(reason: RegExp): Promise<void> {
     await expect(this.page.getByTestId('error')).toContainText(reason)

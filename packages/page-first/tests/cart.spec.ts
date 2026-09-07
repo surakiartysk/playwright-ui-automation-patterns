@@ -1,4 +1,4 @@
-import { test, journey } from './fixtures.js'
+import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 
 const BACKPACK = 'sauce-labs-backpack'
@@ -35,5 +35,33 @@ test.describe('The cart', () => {
 
     await inventory.openCart()
     await inventory.expectCartHolds(0)
+  })
+
+  test(`${journey('cart.survives-navigation')} — the cart still holds its items after leaving and returning`, async ({
+    page,
+    inventory,
+  }) => {
+    await inventory.addToCart(BACKPACK)
+    await inventory.openCart()
+
+    // A fresh load, not history: a cart held only in the page's memory
+    // survives going back but not this.
+    await page.goto('/inventory.html')
+
+    await inventory.expectCartCount(1)
+    await inventory.expectProductInCart(BACKPACK)
+  })
+
+  test(`${journey('cart.continue-shopping-returns')} — continue shopping returns to the list without emptying the cart`, async ({
+    page,
+    inventory,
+    checkout,
+  }) => {
+    await inventory.addToCart(BACKPACK)
+    await inventory.openCart()
+    await checkout.continueShopping()
+
+    await expect(page).toHaveURL(/inventory\.html/)
+    await inventory.expectCartCount(1)
   })
 })

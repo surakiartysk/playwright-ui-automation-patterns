@@ -23,4 +23,27 @@ test.describe('Signing in', () => {
     await login.signInWithWrongPassword(users.standard)
     await login.expectRefusalRevealsNothing()
   })
+
+  test(`${journey('auth.protects-pages-behind-login')} @smoke — a signed-out visitor asking for a page directly is refused`, async ({
+    login,
+  }) => {
+    // Typed into the address bar, no session. A page reachable by URL is
+    // reachable, whatever the navigation chooses to show.
+    await login.requestDirectly('/inventory.html')
+    await login.expectRefused(/when you are logged in/)
+  })
+
+  test(`${journey('auth.sign-out-ends-the-session')} — signing out returns to the form and the page cannot be reached again`, async ({
+    login,
+    inventory,
+  }) => {
+    await login.signIn(users.standard)
+    await inventory.signOut()
+    await login.expectSignInFormShown()
+
+    // The half that is easy to skip: signing out must end the session, not
+    // just navigate away from it.
+    await login.requestDirectly('/inventory.html')
+    await login.expectRefused(/when you are logged in/)
+  })
 })

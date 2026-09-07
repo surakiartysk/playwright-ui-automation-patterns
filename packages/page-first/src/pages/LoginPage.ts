@@ -36,6 +36,15 @@ export class LoginPage {
     await this.page.getByTestId('login-button').click()
   }
 
+  /** Asks for a page directly, with no session. */
+  async requestDirectly(path: string): Promise<void> {
+    await this.page.goto(path)
+  }
+
+  async expectSignInFormShown(): Promise<void> {
+    await expect(this.page.getByTestId('login-button')).toBeVisible()
+  }
+
   async expectRefused(reason: RegExp): Promise<void> {
     await expect(this.page).not.toHaveURL(/inventory\.html/)
     await expect(this.page.getByTestId('error')).toContainText(reason)
