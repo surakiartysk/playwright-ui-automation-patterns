@@ -1,7 +1,7 @@
 import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 import { inventoryLocators } from '../src/locators/inventory.js'
-import { signIn } from '../src/pages/index.js'
+import { openMenu, signIn } from '../src/pages/index.js'
 
 /**
  * The accounts that are broken on purpose.
@@ -65,7 +65,7 @@ test.describe('Known defects', () => {
     }
     await expect(inventoryLocators.cartBadge(page)).toHaveText(String(added.length))
 
-    await inventoryLocators.menu(page).click()
+    await openMenu(page)
     await inventoryLocators.resetState(page).click()
 
     // The cart really is empty.

@@ -35,6 +35,14 @@ export const inventoryLocators = {
    * deliberate exception rather than an oversight.
    */
   menu: (page: Page): Locator => page.locator('#react-burger-menu-btn'),
+
+  /**
+   * The sliding panel, whose `aria-hidden` is the application's own statement
+   * about whether the menu is open. Read by `openMenu` to confirm the click
+   * registered — see the note there.
+   */
+  menuPanel: (page: Page): Locator => page.locator('.bm-menu-wrap'),
+
   logout: (page: Page): Locator => page.getByTestId('logout-sidebar-link'),
   resetState: (page: Page): Locator => page.getByTestId('reset-sidebar-link'),
 }

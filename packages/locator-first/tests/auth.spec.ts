@@ -2,7 +2,7 @@ import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 import { loginLocators } from '../src/locators/login.js'
 import { inventoryLocators } from '../src/locators/inventory.js'
-import { signIn } from '../src/pages/index.js'
+import { openMenu, signIn } from '../src/pages/index.js'
 
 test.describe('Signing in', () => {
   test(`${journey('auth.valid-credentials')} @smoke — a standard user reaches the product list`, async ({
@@ -63,7 +63,7 @@ test.describe('Signing in', () => {
     page,
   }) => {
     await signIn(page, users.standard)
-    await inventoryLocators.menu(page).click()
+    await openMenu(page)
     await inventoryLocators.logout(page).click()
 
     await expect(loginLocators.submit(page)).toBeVisible()
