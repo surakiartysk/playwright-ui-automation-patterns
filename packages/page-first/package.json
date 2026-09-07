@@ -1,0 +1,15 @@
+{
+  "name": "@swag-lab/page-first",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:debug": "playwright test --debug",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@swag-lab/shared-journeys": "workspace:*"
+  }
+}

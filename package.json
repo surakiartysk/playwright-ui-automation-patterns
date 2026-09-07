@@ -1,0 +1,34 @@
+{
+  "name": "playwright-ui-automation-patterns",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "UI test automation reference \u2014 the same journeys built two ways (locator-first vs page-first), against one shared journey set.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "pnpm -r --sequential test",
+    "test:locator": "pnpm --filter @swag-lab/locator-first test",
+    "test:page": "pnpm --filter @swag-lab/page-first test",
+    "test:smoke": "pnpm -r --sequential test:smoke",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "pnpm -r type-check",
+    "check:leak": "node scripts/check-leak.mjs",
+    "check:journeys": "node scripts/check-journeys.mjs",
+    "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:leak && pnpm check:journeys && pnpm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.4.1",
+    "allure-playwright": "^3.12.0",
+    "oxlint": "^1.81.0",
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2"
+  }
+}
