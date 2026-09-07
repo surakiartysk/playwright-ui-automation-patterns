@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+
+# Playwright and Allure output — all generated, none of it belongs in git.
+test-results/
+playwright-report/
+blob-report/
+allure-results/
+allure-report/
+.auth/
+
+.env
+.env.local
+.env*
+.DS_Store
