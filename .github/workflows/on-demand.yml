@@ -6,7 +6,7 @@ name: On-demand
 # deliberately the same shape: the dashboard dispatches both, and a body that
 # branched per suite would be a second thing to keep in step. GitHub rejects a
 # dispatch carrying an input a workflow does not declare — the whole request
-# fails rather than the extra being ignored — so the three input names below
+# fails rather than the extra being ignored — so the input names below
 # are a contract with the dashboard, not a convenience.
 #
 # What differs from the API suite is what the inputs mean. There, `scope` is a
