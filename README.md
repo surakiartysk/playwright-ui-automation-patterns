@@ -72,7 +72,9 @@ just has no report link.
 
 | Document                                                  | What it argues                                                               |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [architecture.md](docs/architecture.md)                   | how the packages fit, and what each layer may know                           |
 | [comparison.md](docs/comparison.md)                       | the scorecard — where each style wins, written to be useful not flattering   |
+| [triage.md](docs/triage.md)                               | what to do when it goes red, and who owns each kind of failure               |
 | [a-site-you-do-not-own.md](docs/a-site-you-do-not-own.md) | what testing a site you _don't_ own costs, and how this repo avoids that tax |
 | [decisions.md](docs/decisions.md)                         | each decision with its trade-off, including the ones that were wrong first   |
 | [how-it-was-built.md](docs/how-it-was-built.md)           | the subject, and how AI was used                                             |
