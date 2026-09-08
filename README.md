@@ -78,6 +78,7 @@ just has no report link.
 | [flake.md](docs/flake.md)               | what testing a site you _don't_ own costs, measured against a suite that did |
 | [decisions.md](docs/decisions.md)       | each decision with its trade-off, including the ones that were wrong first   |
 | [provenance.md](docs/provenance.md)     | what came from where, and what deliberately did not                          |
+| [CONTRIBUTING.md](CONTRIBUTING.md)      | how to run it, what the gates check, how to add a journey                    |
 
 ## Status
 
