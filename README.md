@@ -78,6 +78,7 @@ just has no report link.
 | [a-site-you-do-not-own.md](docs/a-site-you-do-not-own.md) | what testing a site you _don't_ own costs, and how this repo avoids that tax |
 | [decisions.md](docs/decisions.md)                         | each decision with its trade-off, including the ones that were wrong first   |
 | [how-it-was-built.md](docs/how-it-was-built.md)           | the subject, and how AI was used                                             |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                        | how to run it, what the gates check, how to add a journey                    |
 
 ## Status
 
