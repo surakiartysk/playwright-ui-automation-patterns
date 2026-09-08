@@ -70,12 +70,14 @@ just has no report link.
 
 ## What is written down
 
-| Document                            | What it argues                                                               |
-| ----------------------------------- | ---------------------------------------------------------------------------- |
-| [comparison.md](docs/comparison.md) | the scorecard — where each style wins, written to be useful not flattering   |
-| [flake.md](docs/flake.md)           | what testing a site you _don't_ own costs, measured against a suite that did |
-| [decisions.md](docs/decisions.md)   | each decision with its trade-off, including the ones that were wrong first   |
-| [provenance.md](docs/provenance.md) | what came from where, and what deliberately did not                          |
+| Document                                | What it argues                                                               |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| [architecture.md](docs/architecture.md) | how the packages fit, and what each layer may know                           |
+| [comparison.md](docs/comparison.md)     | the scorecard — where each style wins, written to be useful not flattering   |
+| [triage.md](docs/triage.md)             | what to do when it goes red, and who owns each kind of failure               |
+| [flake.md](docs/flake.md)               | what testing a site you _don't_ own costs, measured against a suite that did |
+| [decisions.md](docs/decisions.md)       | each decision with its trade-off, including the ones that were wrong first   |
+| [provenance.md](docs/provenance.md)     | what came from where, and what deliberately did not                          |
 
 ## Status
 
