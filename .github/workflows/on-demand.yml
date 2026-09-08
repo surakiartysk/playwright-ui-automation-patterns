@@ -146,10 +146,16 @@ jobs:
         run: |
           node -e '
             const { readdirSync, existsSync, readFileSync } = require("fs")
-            let total = 0, passed = 0, failed = 0
+            let total = 0, passed = 0, failed = 0, duration = 0
             for (const pkg of readdirSync("packages")) {
               const f = `packages/${pkg}/results.json`
               if (!existsSync(f)) continue
+              const report = JSON.parse(readFileSync(f, "utf8"))
+              // The LONGEST package, not the sum. Both packages run at once
+              // here, so adding them would report roughly twice the time the
+              // run actually took — a number that reads as a slow suite and is
+              // an artefact of counting.
+              duration = Math.max(duration, Math.round(report.stats?.duration ?? 0))
               const walk = (suites) => {
                 for (const suite of suites ?? []) {
                   for (const spec of suite.specs ?? []) {
@@ -165,7 +171,7 @@ jobs:
               walk(JSON.parse(readFileSync(f, "utf8")).suites)
             }
             const out = require("fs").createWriteStream(process.env.GITHUB_OUTPUT, { flags: "a" })
-            out.write(`total=${total}\npassed=${passed}\nfailed=${failed}\n`)
+            out.write(`total=${total}\npassed=${passed}\nfailed=${failed}\nduration=${duration}\n`)
           '
 
       # Build the report the dashboard will serve.
@@ -212,6 +218,7 @@ jobs:
           TOTAL: ${{ steps.totals.outputs.total }}
           PASSED: ${{ steps.totals.outputs.passed }}
           FAILED: ${{ steps.totals.outputs.failed }}
+          DURATION: ${{ steps.totals.outputs.duration }}
           REPORT_PATH: ${{ steps.upload.outcome == 'success' && format('runs/{0}/index.html', steps.opts.outputs.run_id) || '' }}
           # What was actually run, so a result can be traced back to a tree.
           SUITE_SHA: ${{ github.sha }}
@@ -226,6 +233,7 @@ jobs:
               total: Number(process.env.TOTAL || 0),
               passed: Number(process.env.PASSED || 0),
               failed: Number(process.env.FAILED || 0),
+              ...(process.env.DURATION ? { durationMs: Number(process.env.DURATION) } : {}),
               ...(process.env.REPORT_PATH ? { reportPath: process.env.REPORT_PATH } : {}),
               workflowUrl: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
               suiteVersion: process.env.SUITE_VERSION,
