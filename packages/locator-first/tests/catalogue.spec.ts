@@ -38,7 +38,22 @@ test.describe('The product list', () => {
     const priceText = () => inventoryLocators.prices(page).allTextContents()
     const before = await priceText()
 
+    /*
+     * `selectOption` returns once the control has changed, which is before the
+     * list it reorders has re-rendered — so a bare `allTextContents()` here
+     * reads the *unsorted* order and the test fails claiming the sort is
+     * broken. `toHaveText` polls until the DOM settles; `allTextContents`
+     * takes one snapshot and cannot.
+     *
+     * Asserted as "already in ascending order" rather than "different from
+     * before", because the two are not the same: a list that happens to be
+     * sorted already would never change, and waiting for a change would hang.
+     */
     await inventoryLocators.sort(page).selectOption('lohi')
+    await expect(inventoryLocators.prices(page)).toHaveText(
+      [...before].sort((a, b) => value(a) - value(b)),
+    )
+
     const after = await priceText()
 
     const ascending = [...after].map(value)
@@ -53,10 +68,16 @@ test.describe('The product list', () => {
   test(`${journey('catalogue.sorts-by-name')} — sorting Z-to-A reverses the A-to-Z order exactly`, async ({
     page,
   }) => {
+    // Waited on for the same reason as the price sort above: `selectOption`
+    // returns before the list it reorders has re-rendered.
+    const original = await inventoryLocators.names(page).allTextContents()
+
     await inventoryLocators.sort(page).selectOption('az')
+    await expect(inventoryLocators.names(page)).toHaveText([...original].sort())
     const ascending = await inventoryLocators.names(page).allTextContents()
 
     await inventoryLocators.sort(page).selectOption('za')
+    await expect(inventoryLocators.names(page)).toHaveText([...ascending].toReversed())
     const descending = await inventoryLocators.names(page).allTextContents()
 
     // Exactly reversed, not merely "different order". A sort that shuffles
@@ -73,6 +94,22 @@ test.describe('The product list', () => {
     await inventoryLocators.names(page).first().click()
 
     await expect(page).toHaveURL(/inventory-item\.html/)
+
+    /*
+     * Wait for the list to be *gone* before reading the detail page.
+     *
+     * The URL changes before the DOM does — this is a client-side route, so
+     * for a moment `page.url()` is the detail page while the six list items
+     * are still mounted. `toHaveURL` is satisfied by the URL alone and returns
+     * inside that window, and the assertion below then resolves to six
+     * elements and fails on strict mode rather than retrying.
+     *
+     * `waitForURL` does not help, for the same reason: it waits on the URL,
+     * which was never the slow part. The count is what actually distinguishes
+     * the two pages, so it is what gets waited on.
+     */
+    await expect(page.getByTestId('inventory-item-name')).toHaveCount(1)
+
     // The detail page must show the same product, not just *a* product — the
     // classic off-by-one in a list-to-detail link.
     await expect(page.getByTestId('inventory-item-name')).toHaveText(firstName ?? '')

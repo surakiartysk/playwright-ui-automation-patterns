@@ -15,6 +15,9 @@ test.describe('Known defects', () => {
     page,
   }) => {
     await signIn(page, users.problem)
+    // For the same reason as the control below: `signIn` returns as soon as it
+    // has clicked submit, and `evaluateAll` does not retry.
+    await expect(inventoryLocators.images(page)).toHaveCount(6)
 
     const sources = await inventoryLocators
       .images(page)
@@ -40,8 +43,25 @@ test.describe('Known defects', () => {
         `fixed, this test is the thing that is now wrong.`,
     ).toBe(1)
 
-    // And the control: the same page, signed in as a working user, differs.
+    /*
+     * And the control: the same page, signed in as a working user, differs.
+     *
+     * `toHaveCount` before `evaluateAll`, because the two read the page very
+     * differently. An `expect` poll retries until the page settles; a bare
+     * `evaluateAll` takes one snapshot of whatever is mounted at that instant.
+     * `signIn` returns as soon as it has clicked submit — it cannot wait for
+     * the inventory page, because `locked_out_user` never reaches one — so
+     * immediately afterwards this read returned **zero** images, mid-transition
+     * between the two sessions, and the control failed claiming the working
+     * user was also broken.
+     *
+     * Every other test survives this because its first assertion is an
+     * `expect` that retries. This one reads the DOM directly, so it has to
+     * wait for the DOM itself.
+     */
     await signIn(page, users.standard)
+    await expect(inventoryLocators.images(page)).toHaveCount(6)
+
     const healthy = await inventoryLocators
       .images(page)
       .evaluateAll((images) => images.map((image) => image.getAttribute('src')))

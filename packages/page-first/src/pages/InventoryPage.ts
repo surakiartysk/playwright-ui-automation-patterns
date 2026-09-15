@@ -22,8 +22,25 @@ export class InventoryPage {
     await this.page.getByTestId('shopping-cart-link').click()
   }
 
+  /*
+   * Sorts, and does not return until the list has actually reordered.
+   *
+   * `selectOption` returns once the control has changed, which is before the
+   * list it reorders has re-rendered — so a caller reading `prices()` straight
+   * afterwards gets the *unsorted* order and concludes the sort is broken.
+   * `toHaveText` polls until the DOM settles; `allTextContents` takes one
+   * snapshot and cannot.
+   *
+   * Waiting here rather than in the test is what this style is for: the test
+   * cannot reach the locator, so the page has to be the thing that knows when
+   * it is ready. `locator-first` pays the same cost in the test instead.
+   */
   async sortByPriceAscending(): Promise<void> {
+    const before = await this.prices()
     await this.page.getByTestId('product-sort-container').selectOption('lohi')
+    await expect(this.page.getByTestId('inventory-item-price')).toHaveText(
+      [...before].sort((a, b) => Number(a.replace('$', '')) - Number(b.replace('$', ''))),
+    )
   }
 
   /** Prices as they are shown, in the order they are shown. */
@@ -62,12 +79,20 @@ export class InventoryPage {
     await expect(badge).toHaveText(String(count))
   }
 
+  /** Sorts A-to-Z, and waits for the list to be in that order. */
   async sortByNameAscending(): Promise<void> {
+    const before = await this.names()
     await this.page.getByTestId('product-sort-container').selectOption('az')
+    await expect(this.page.getByTestId('inventory-item-name')).toHaveText([...before].sort())
   }
 
+  /** Sorts Z-to-A, and waits for the list to be in that order. */
   async sortByNameDescending(): Promise<void> {
+    const before = await this.names()
     await this.page.getByTestId('product-sort-container').selectOption('za')
+    await expect(this.page.getByTestId('inventory-item-name')).toHaveText(
+      [...before].sort().reverse(),
+    )
   }
 
   async names(): Promise<string[]> {
@@ -81,8 +106,23 @@ export class InventoryPage {
     return { name, price }
   }
 
+  /*
+   * Waits for the list to be gone before reading the detail page.
+   *
+   * The URL changes before the DOM does — this is a client-side route, so for
+   * a moment the URL is the detail page while the six list items are still
+   * mounted. `toHaveURL` is satisfied by the URL alone and returns inside that
+   * window; the name assertion then resolves to six elements and fails on
+   * strict mode rather than retrying. `waitForURL` does not help, because the
+   * URL was never the slow part.
+   *
+   * The count is what actually distinguishes the two pages, so it is what gets
+   * waited on. It does not weaken the assertion below: clicking the second
+   * product and asserting the first still fails, on the name.
+   */
   async expectShowingProduct(product: { name: string; price: string }): Promise<void> {
     await expect(this.page).toHaveURL(/inventory-item\.html/)
+    await expect(this.page.getByTestId('inventory-item-name')).toHaveCount(1)
     await expect(this.page.getByTestId('inventory-item-name')).toHaveText(product.name)
     await expect(this.page.getByTestId('inventory-item-price')).toHaveText(product.price)
   }

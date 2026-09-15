@@ -26,7 +26,7 @@ without notice, it is often built to resist automation, and it is not mine to
 test in public.
 
 Saucedemo is Sauce Labs' own sample application, MIT licensed and published for
-practising exactly this — and it earns the place on merit: four of its six
+practising exactly this — and it earns the place on merit: five of its six
 accounts are broken on purpose, which gives a suite genuine defects to catch.
 
 **Trade-off.** It is a small, stable, well-behaved application. The suite
@@ -274,6 +274,58 @@ this for as long as it existed: the run stayed green, the numbers were right,
 and only reading the log showed a test failing and passing on a second attempt.
 `retries: 1` buys a suite that does not cry wolf and pays for it by making
 exactly this class of bug invisible until someone goes looking.
+
+### And a third time, in three tests at once
+
+Three more tests were failing — `catalogue.opens-product-detail`,
+`catalogue.sorts-by-price` and `defect.problem-user-images` — and this time not
+intermittently. `opens-product-detail` failed **twelve times out of twelve**
+when run alone, while passing when the file ran as a whole. A test that fails
+in isolation and passes in company is the opposite of the usual shape, and it
+is what made the cause findable.
+
+All three were the same mistake: **reading the DOM with something that does not
+retry.** `expect(locator)` polls until the page settles. `allTextContents()`,
+`evaluateAll()` and `count()` take one snapshot of whatever is mounted at that
+instant. Mixing them is fine until something upstream returns before the page
+has caught up, and three separate things do:
+
+- `page.click()` on a client-side route updates the URL **before** the new DOM
+  replaces the old. `toHaveURL` is satisfied by the URL alone and returns
+  inside that window, so the next assertion saw the old list — six elements
+  where the detail page has one — and failed on strict mode rather than
+  retrying. `waitForURL` does not help: the URL was never the slow part.
+- `selectOption` returns once the control has changed, before the list it
+  reorders has re-rendered, so the test read the unsorted order and concluded
+  the sort was broken.
+- `signIn` returns as soon as it has clicked submit — it cannot wait for the
+  inventory page, because `locked_out_user` never reaches one — so a read
+  straight afterwards returned **zero** images, mid-transition.
+
+Every other test survives all three, because its first assertion is an `expect`
+that retries. Only these three read the DOM directly, and each one read it too
+early.
+
+The fix is an `expect` in front of each direct read, waiting for the condition
+that actually distinguishes the new page from the old — a count of one, a known
+sort order, six images. Verified at one worker and at twelve, six runs each,
+zero failures; and mutation-tested by reversing the sort and by clicking the
+second product while asserting the first, both of which still fail.
+
+**Trade-off.** Each of those waits is a place where a genuinely broken page now
+takes five seconds to be discovered instead of failing immediately, and the
+count-based ones assert something weaker than they look: `toHaveCount(1)` is
+satisfied by a detail page showing the _wrong_ product. The assertion that
+catches that is the one after it, which is why the wait was added in front of
+the existing check rather than replacing it.
+
+**Where the fix landed differs by style, and that is the comparison working.**
+`locator-first` waits in the test, because the test holds the locator.
+`page-first` waits inside the page object, because its tests cannot reach a
+locator at all — `sortByPriceAscending` now does not return until the list has
+reordered. Same bug, same fix, nine lines of test versus eleven lines of
+source. Neither is better; it is the trade this repo exists to show, arriving
+on its own.
 
 ---
 

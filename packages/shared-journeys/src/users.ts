@@ -1,9 +1,11 @@
 /**
  * The accounts saucedemo ships, and what is wrong with each.
  *
- * Four of the six are broken on purpose. That is the reason this site was
- * chosen over a well-behaved one: a suite that only ever walks the happy path
- * demonstrates nothing, and these give real defects to catch on demand.
+ * Five of the six are broken on purpose — every account below except
+ * `standard`, which is the only one with `defect: null`. That is the reason
+ * this site was chosen over a well-behaved one: a suite that only ever walks
+ * the happy path demonstrates nothing, and these give real defects to catch
+ * on demand.
  *
  * The defects are described here rather than in the tests so that both
  * packages are testing the same claim about each user, in the same words.

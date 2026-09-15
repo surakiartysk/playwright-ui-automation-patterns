@@ -12,6 +12,9 @@ test.describe('Known defects', () => {
     inventory,
   }) => {
     await login.signIn(users.problem)
+    // For the same reason as the control below: `signIn` returns as soon as it
+    // has clicked submit, and `imageSources` does not retry.
+    await inventory.expectProductCount(6)
     const sources = await inventory.imageSources()
 
     expect(sources).toHaveLength(6)
@@ -24,8 +27,21 @@ test.describe('Known defects', () => {
         `fixed, this test is the thing that is now wrong.`,
     ).toBe(1)
 
-    // The control: the same page as a working user differs.
+    /*
+     * The control: the same page as a working user differs.
+     *
+     * `expectProductCount` before `imageSources`, because the two read the
+     * page very differently. An `expect` poll retries until the page settles;
+     * `imageSources` takes one snapshot of whatever is mounted at that
+     * instant. `signIn` returns as soon as it has clicked submit — it cannot
+     * wait for the inventory page, because `locked_out_user` never reaches one
+     * — so immediately afterwards this read returned **zero** images,
+     * mid-transition between the two sessions, and the control failed claiming
+     * the working user was also broken.
+     */
     await login.signIn(users.standard)
+    await inventory.expectProductCount(6)
+
     expect(new Set(await inventory.imageSources()).size).toBeGreaterThan(1)
   })
 
