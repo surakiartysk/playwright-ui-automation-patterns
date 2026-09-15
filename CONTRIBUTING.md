@@ -106,12 +106,17 @@ discipline above is what covers the rest.
 ### `check:claims`
 
 Fails when the documents advertise a number the tree no longer supports —
-journey counts, tests per package, and the line counts in
-`docs/comparison.md`.
+journey counts, tests per package, the line counts in `docs/comparison.md`,
+and how many of the application's six accounts are broken on purpose.
 
 When it fires after you add code, update **both the table and the prose that
 quotes its numbers**. The gap between the two styles is stated in a sentence as
 well as a table, and only the table is checked.
+
+The broken-account count is derived from `users.ts` and compared against every
+document that states it. It is there because that one sentence was wrong in
+four documents at once: they said four accounts were broken when five carry a
+defect, each copy written from memory instead of from the table.
 
 ## Adding a journey
 
@@ -127,6 +132,27 @@ well as a table, and only the table is checked.
    is typed, so a typo is a compile error rather than a journey silently going
    uncovered.
 4. **Prove it can fail**, then `pnpm verify`.
+
+### If it belongs in a new journey group
+
+A group is a spec file, and the dashboard offers those files by name. A new
+one — or a renamed one — is **three edits in two repositories**, and nothing
+here will tell you about the other two:
+
+1. `options:` in `.github/workflows/on-demand.yml`, which is what GitHub
+   validates a dispatch against.
+2. `SUITE_SERVICES.ui` in the dashboard's `RunTrigger.tsx`, which is what a
+   user can pick.
+3. `WORKFLOW_ACCEPTS.ui` and `DASHBOARD_OFFERS.ui` in the dashboard's
+   `integration-contract.test.ts`, which is the hand-copied record of what
+   this workflow accepts.
+
+Skip 1 and the dashboard offers a slice GitHub refuses. Skip 2 and the group
+exists but nobody can run it. Skip 3 and the test that exists to catch both
+goes on passing, because it is comparing two lists that are now both stale.
+The failure surfaces in the _other_ repository's test run — a strange place to
+learn about a file renamed here, and the cost recorded in
+[decision 9](docs/decisions.md#9-a-dashboard-runs-this-suite-and-the-contract-is-its-inputs).
 
 Assert against data the test created. There is no contract here and no way to
 seed state — the application _is_ the specification — so a global count like

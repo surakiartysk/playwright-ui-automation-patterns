@@ -6,7 +6,7 @@ The subject under test, and how AI was used.
 
 [saucedemo.com](https://www.saucedemo.com), owned by Sauce Labs, MIT licensed,
 and published as a sample application for practising exactly this. It has six
-accounts, four of them broken on purpose, which gives a suite real defects to
+accounts, five of them broken on purpose, which gives a suite real defects to
 catch instead of a happy path to walk.
 
 ## How AI was used

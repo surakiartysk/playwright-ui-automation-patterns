@@ -86,6 +86,39 @@ function testCount(pkg) {
   return count
 }
 
+/**
+ * How many of the six accounts are broken, from the user table itself.
+ *
+ * `standard` is the only entry with `defect: null`; every other account
+ * describes what is wrong with it, and that description is what the defect
+ * journeys assert against.
+ */
+function brokenUserCount() {
+  const src = readFileSync(join(ROOT, 'packages/shared-journeys/src/users.ts'), 'utf8')
+  // Scoped to the `users` object, not the whole file: the `User` interface
+  // declares a `defect` field of its own and its doc comment mentions another,
+  // so counting the file wholesale reported eight accounts. And not anchored
+  // to the start of a line either — `standard` is written inline as
+  // `{ name: 'standard_user', defect: null }`, which an anchored pattern
+  // misses, undercounting by exactly the one account that is not broken.
+  //
+  // Both mistakes were made while writing this check, in that order, which is
+  // a fair illustration of why the number is not maintained by hand.
+  const table = /export const users = \{([\s\S]*?)\n\} as const/.exec(src)
+  if (!table) {
+    fail('users.ts: could not find the `users` table — this check cannot verify the count')
+    return null
+  }
+
+  const defects = [...table[1].matchAll(/\bdefect:/g)]
+  const nulls = [...table[1].matchAll(/\bdefect:\s*null\b/g)]
+  if (defects.length === 0) {
+    fail('users.ts: no `defect:` entries found — this check cannot verify the count')
+    return null
+  }
+  return { total: defects.length, broken: defects.length - nulls.length }
+}
+
 const journeys = journeyCount()
 const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
 const comparison = readFileSync(join(ROOT, 'docs/comparison.md'), 'utf8')
@@ -156,6 +189,55 @@ for (const pkg of PACKAGES) {
   }
 }
 
+// ── How many accounts are broken on purpose ────────────────────────────────
+//
+// This one has gone wrong four times, in four documents, because every copy
+// was written from memory rather than from the table. It said "four of six"
+// while five accounts carried a defect — `visual_user` and `error_user` are
+// both broken, and only `standard` is not.
+//
+// Checked across every document that states it, and deliberately not against
+// one another: two files agreeing with each other and not with the code is
+// exactly the failure this repo keeps having.
+const users = brokenUserCount()
+if (users) {
+  const NUMBERS = { four: 4, five: 5, six: 6, 4: 4, 5: 5, 6: 6 }
+  const claim = /(\w+) of (?:its |the )?(\w+)(?: accounts| users)?(?:[^.\n]*?)broken/i
+
+  const DOCS = [
+    'README.md',
+    'CLAUDE.md',
+    'docs/decisions.md',
+    'docs/architecture.md',
+    'packages/shared-journeys/src/users.ts',
+  ]
+
+  let stated = 0
+  for (const file of DOCS) {
+    const text = readFileSync(join(ROOT, file), 'utf8')
+    for (const line of text.split('\n')) {
+      const found = claim.exec(line)
+      if (!found) continue
+
+      const broken = NUMBERS[found[1].toLowerCase()]
+      const total = NUMBERS[found[2].toLowerCase()]
+      if (broken === undefined || total === undefined) continue
+
+      stated += 1
+      if (broken !== users.broken || total !== users.total) {
+        fail(
+          `${file}: claims ${found[1]} of ${found[2]} accounts are broken, ` +
+            `users.ts has ${users.broken} of ${users.total}`,
+        )
+      }
+    }
+  }
+
+  if (stated === 0) {
+    fail('no document states how many accounts are broken — did the wording change?')
+  }
+}
+
 if (problems.length > 0) {
   console.error(`\n✖ check:claims — the docs advertise something that is not true.\n`)
   for (const p of problems) console.error(`  ${p}`)
@@ -165,5 +247,6 @@ if (problems.length > 0) {
 
 console.log(
   `✓ check:claims — ${journeys} journeys, ${locatorTests} tests per package, ` +
+    `${users ? `${users.broken} of ${users.total} accounts broken, ` : ''}` +
     `and the comparison table matches the tree`,
 )

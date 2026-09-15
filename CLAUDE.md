@@ -74,6 +74,33 @@ defects directly. Those tests are written to go **red if the application is ever
 fixed**, with a failure message saying so. If one goes red, read the message
 before touching the assertion.
 
+## The contract with the dashboard
+
+`playwright-run-dashboard` dispatches this suite, and neither repository can
+import the other. Three things have to stay in step, and only a test in _that_
+repo holds them there:
+
+- **The workflow inputs.** `on-demand.yml` declares `style`, `scope`, `workers`
+  and `run_id` — the same four names the API suite declares. GitHub rejects a
+  dispatch carrying an input a workflow does not declare, and rejects the whole
+  request rather than ignoring the extra, so these names are a contract and not
+  a convenience. Renaming one breaks every dispatch.
+- **The report path.** The workflow writes `runs/{run_id}/index.html` into the
+  dashboard's R2 bucket; the dashboard serves from that prefix.
+- **The callback shape.** Signed over `timestamp.body`, refused after five
+  minutes.
+
+**`scope` means something different here than in the API suite**, and getting
+it wrong fails silently. There, a scope is a tag. Here every value but `all`
+and `smoke` names a spec file, because these journeys are grouped by file —
+`--grep @auth` matches nothing, and Playwright reports "no tests found" as a
+**success with zero tests**. The dashboard would record a green run that
+asserted nothing.
+
+A new or renamed spec file is an edit in this repo and two in the dashboard.
+See [CONTRIBUTING.md](CONTRIBUTING.md#if-it-belongs-in-a-new-journey-group)
+before renaming one.
+
 ## Adding a journey
 
 1. Add its id to `packages/shared-journeys/src/journeys.ts` — the typed list is
@@ -83,7 +110,8 @@ before touching the assertion.
 
 `check:journeys` fails if only one package covers it. `check:claims` fails if
 the line counts in `docs/comparison.md` have gone stale — update the table
-_and_ the prose that quotes its numbers.
+_and_ the prose that quotes its numbers — and if any document disagrees with
+`users.ts` about how many accounts are broken.
 
 ## Commands
 

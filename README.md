@@ -26,11 +26,12 @@ that by `check:journeys`, which fails when either package is missing one.
 [saucedemo.com](https://www.saucedemo.com) — Sauce Labs' sample application,
 MIT licensed and published for this purpose.
 
-Chosen on merit, not convenience: it ships six accounts, **four of them broken
-on purpose.** `locked_out_user` cannot sign in. `problem_user` signs in and then
-renders all six products with the same image. `performance_glitch_user` takes
-seconds to do what the standard user does instantly. A suite that only walks
-the happy path proves nothing; these are real defects, on demand.
+Chosen on merit, not convenience: it ships six accounts, **five of them broken
+on purpose** — every one but `standard_user`. `locked_out_user` cannot sign in.
+`problem_user` signs in and then renders all six products with the same image.
+`performance_glitch_user` takes seconds to do what the standard user does
+instantly. A suite that only walks the happy path proves nothing; these are
+real defects, on demand.
 
 ## Running it
 
