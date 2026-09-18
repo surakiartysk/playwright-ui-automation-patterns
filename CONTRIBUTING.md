@@ -82,8 +82,8 @@ failing — see
 
 ## Quality gates
 
-There are no git hooks in this repo — no husky, no lint-staged, no commitlint.
-`pnpm verify` is the gate, and it is on you to run it:
+The one git hook checks formatting on the staged files (below), and nothing
+else. `pnpm verify` is the gate, and it is on you to run it:
 
 ```bash
 pnpm verify
@@ -91,6 +91,12 @@ pnpm verify
 
 which is `format:check → lint → type-check → check:journeys → check:claims →
 test`, the same sequence CI runs in `.github/workflows/verify.yml`.
+
+### The pre-commit hook
+
+It runs Prettier on the staged files and nothing else. `husky init` writes
+`pnpm test` there by default, which for a suite that drives a browser is
+minutes, and a hook that slow gets skipped. Correctness is CI's job.
 
 ### `check:journeys`
 

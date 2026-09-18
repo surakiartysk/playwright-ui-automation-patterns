@@ -1,0 +1,8 @@
+# Formatting on the staged files only — about a second.
+#
+# `husky init` writes `pnpm test` here by default. That is wrong for this repo:
+# the suite drives a browser, so a full run is minutes, and a hook that slow
+# gets bypassed with --no-verify the first time someone is in a hurry. A hook
+# people routinely skip is worse than no hook. Correctness is CI's job.
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$files" ] || pnpm exec prettier --check --ignore-unknown $files
