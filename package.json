@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "UI test automation reference \u2014 the same journeys built two ways (locator-first vs page-first), against one shared journey set.",
+  "description": "UI test automation reference — the same journeys built two ways (locator-first vs page-first), against one shared journey set.",
   "license": "MIT",
   "packageManager": "pnpm@10.18.0",
   "engines": {
@@ -23,13 +23,15 @@
     "type-check": "pnpm -r type-check",
     "check:journeys": "node scripts/check-journeys.mjs",
     "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:journeys && pnpm check:claims && pnpm test",
-    "check:claims": "node scripts/check-claims.mjs"
+    "check:claims": "node scripts/check-claims.mjs",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.4.1",
     "allure": "^3.15.0",
     "allure-playwright": "^3.12.0",
+    "husky": "^9.1.7",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2"
