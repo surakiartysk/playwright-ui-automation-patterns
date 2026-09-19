@@ -238,6 +238,95 @@ if (users) {
   }
 }
 
+// ── What the locators are bound to ─────────────────────────────────────────
+//
+// docs/a-site-you-do-not-own.md argues that a suite against markup it does not
+// own ends up bound to CSS structure, because it cannot add test ids. Saucedemo
+// ships `data-test`, "which turns 'ask your developers for test ids' from an
+// opinion into a claim this repo can show the cost of".
+//
+// Nothing counted whether this repo holds to that itself. A suite arguing for the
+// published contract while quietly drifting onto class names would be making
+// the argument and losing it at the same time, and the drift is invisible:
+// every one of those locators works until a redesign.
+//
+// So each selector bound to structure rather than to the contract has to be
+// listed here with its reason. The cost is that adding one is deliberately
+// annoying — which is the point, and is why the list is short.
+const ALLOWED_STRUCTURE_SELECTORS = {
+  '#react-burger-menu-btn':
+    'The button, not the `data-test` element: `open-menu` sits on the <img> ' +
+    'inside it and the button intercepts the click.',
+  '.bm-menu-wrap':
+    "The sliding panel, whose `aria-hidden` is the application's own statement " +
+    'that the menu is open.',
+  '.inventory_item_img img':
+    'Bound to layout classes. Unlike the two above, nothing in this repo ' +
+    'explains why — if the application publishes a `data-test` for the product ' +
+    'image, this should use it instead.',
+}
+
+const locatorCounts = { contract: 0, structure: 0 }
+const structureUses = new Map()
+
+for (const pkg of PACKAGES) {
+  for (const file of walk(join(ROOT, 'packages', pkg, 'src'))) {
+    if (!file.endsWith('.ts')) continue
+    const src = readFileSync(file, 'utf8')
+
+    locatorCounts.contract += [...src.matchAll(/getByTestId\(/g)].length
+
+    for (const match of src.matchAll(/\.locator\(\s*'([^']+)'/g)) {
+      const selector = match[1]
+      // `[data-test…]` is the published contract too — an attribute selector
+      // rather than a helper, used where a prefix match is wanted.
+      if (selector.startsWith('[data-test')) {
+        locatorCounts.contract += 1
+        continue
+      }
+      locatorCounts.structure += 1
+      structureUses.set(selector, (structureUses.get(selector) ?? 0) + 1)
+    }
+  }
+}
+
+for (const [selector] of structureUses) {
+  if (!(selector in ALLOWED_STRUCTURE_SELECTORS)) {
+    fail(
+      `a locator binds to '${selector}', which is page structure rather than the ` +
+        'published `data-test` contract. Use a test id, or add it to ' +
+        'ALLOWED_STRUCTURE_SELECTORS in this script with the reason.',
+    )
+  }
+}
+
+for (const selector of Object.keys(ALLOWED_STRUCTURE_SELECTORS)) {
+  if (!structureUses.has(selector)) {
+    fail(
+      `ALLOWED_STRUCTURE_SELECTORS lists '${selector}', which nothing uses any more. ` +
+        'Remove it, so the list keeps meaning what it says.',
+    )
+  }
+}
+
+// The count docs/a-site-you-do-not-own.md quotes about this repo.
+const siteDoc = readFileSync(join(ROOT, 'docs/a-site-you-do-not-own.md'), 'utf8')
+// Prettier reflows this paragraph, so the pattern tolerates a line break
+// anywhere a space appears — a check that silently stops matching because
+// of a rewrap is worse than no check.
+const ownCount = /this\s+suite\s+binds\s+\*\*(\d+)\*\*\s+locators\s+to\s+page\s+structure/.exec(
+  siteDoc,
+)
+
+if (!ownCount) {
+  fail('docs/a-site-you-do-not-own.md: could not find the count this check guards')
+} else if (Number(ownCount[1]) !== locatorCounts.structure) {
+  fail(
+    `docs/a-site-you-do-not-own.md: claims ${ownCount[1]} structure-bound locators, ` +
+      `the tree has ${locatorCounts.structure}`,
+  )
+}
+
 if (problems.length > 0) {
   console.error(`\n✖ check:claims — the docs advertise something that is not true.\n`)
   for (const p of problems) console.error(`  ${p}`)
@@ -248,5 +337,7 @@ if (problems.length > 0) {
 console.log(
   `✓ check:claims — ${journeys} journeys, ${locatorTests} tests per package, ` +
     `${users ? `${users.broken} of ${users.total} accounts broken, ` : ''}` +
+    `${locatorCounts.contract} locators on the published contract and ` +
+    `${locatorCounts.structure} on page structure, ` +
     `and the comparison table matches the tree`,
 )

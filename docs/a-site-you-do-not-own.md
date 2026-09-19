@@ -38,3 +38,22 @@ changes nothing a user sees breaks it anyway.
 Saucedemo ships `data-test` attributes, so here the contract exists — which
 turns "ask your developers for test ids" from an opinion into a claim this repo
 can show the cost of.
+
+### Which means this repo's own count is the claim
+
+An argument for test ids is only as good as the suite making it. Across both
+packages this suite binds **7** locators to page structure; everything else goes
+through `data-test`, either by `getByTestId` or by an attribute selector where a
+prefix match is wanted.
+
+Those seven are three selectors, each listed in `scripts/check-claims.mjs` with
+its reason, and `check:claims` fails on a fourth appearing or on one of the
+three falling out of use. Two are the burger menu, where the published
+`data-test` sits on an element the button intercepts clicks for. The third is
+the product image, and it is listed honestly: nothing here explains why it is
+bound to layout classes, and if the application publishes a test id for it,
+that is what it should use.
+
+The number above is not maintained by hand — `check:claims` derives it from the
+tree and fails when this paragraph goes stale, for the same reason every other
+number in these documents is checked.
