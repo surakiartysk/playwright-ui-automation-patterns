@@ -87,9 +87,16 @@ jobs:
           #
           # `smoke` is a tag and greps. Every other value names a spec file,
           # because these journeys are grouped by file — `--grep @auth` would
-          # match nothing at all, and Playwright reports "no tests found" as a
-          # SUCCESS with zero tests. The dashboard would record a green run
-          # that asserted nothing, which is the worst failure available here.
+          # match nothing at all.
+          #
+          # Measured rather than assumed: Playwright 1.63 answers an empty
+          # selection with `Error: No tests found` and exit 1, and the `||`
+          # below turns that into `failed=true`, so the callback reports a
+          # failed run and this job re-raises it. The failure is loud; what it
+          # is not is *informative* — a dashboard user who picked "auth" sees a
+          # broken suite rather than a slice that does not exist by that name.
+          # `check:journeys` holds these options against the spec files so the
+          # mismatch is caught here instead.
           case "$SCOPE" in
             all)   SELECT="" ;;
             smoke) SELECT="--grep @smoke" ;;

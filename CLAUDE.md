@@ -24,8 +24,10 @@ Duplication between them is the experiment's control, not an oversight to clean
 up.
 
 Any change to behaviour must land in **both** packages, or the comparison stops
-being fair. `pnpm check:journeys` enforces that both cover the same journeys;
-it does not check they assert equally well, which is still on you.
+being fair. `pnpm check:journeys` enforces that both cover the same journeys,
+that the `smoke` flag and the `@smoke` tag say the same thing in both, and that
+every dispatchable scope names a spec file that exists. It does not check the
+two assert equally well, which is still on you.
 
 ## Non-negotiables
 
@@ -90,12 +92,16 @@ repo holds them there:
 - **The callback shape.** Signed over `timestamp.body`, refused after five
   minutes.
 
-**`scope` means something different here than in the API suite**, and getting
-it wrong fails silently. There, a scope is a tag. Here every value but `all`
-and `smoke` names a spec file, because these journeys are grouped by file —
-`--grep @auth` matches nothing, and Playwright reports "no tests found" as a
-**success with zero tests**. The dashboard would record a green run that
-asserted nothing.
+**`scope` means something different here than in the API suite.** There, a
+scope is a tag. Here every value but `all` and `smoke` names a spec file,
+because these journeys are grouped by file — `--grep @auth` matches nothing.
+
+Getting it wrong fails **loudly but misleadingly**: Playwright answers an empty
+selection with `Error: No tests found` and exit 1, which the workflow reports
+as a failed run. So a stale dropdown reads as a broken suite. `check:journeys`
+compares the scope options against the spec files in both directions, in this
+repo, where the fix is — and that is the check to update if a scope ever stops
+naming a file.
 
 A new or renamed spec file is an edit in this repo and two in the dashboard.
 See [CONTRIBUTING.md](CONTRIBUTING.md#if-it-belongs-in-a-new-journey-group)

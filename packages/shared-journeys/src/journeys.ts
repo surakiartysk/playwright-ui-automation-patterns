@@ -15,7 +15,19 @@ export interface Journey {
   readonly id: string
   /** What is being claimed, in the words a report should use. */
   readonly claim: string
-  /** Smoke journeys run on every push; the rest run on the full suite. */
+  /**
+   * The journeys worth running when you can only run a few.
+   *
+   * Nothing runs a subset automatically: `verify.yml` runs the whole suite on
+   * every push, and this field used to claim otherwise. What it does drive is
+   * the `smoke` scope in `on-demand.yml` and `pnpm test:smoke`, both of which
+   * select on the `@smoke` tag written into the test title.
+   *
+   * So the flag and the tag are two statements of one fact, in two places, and
+   * `check:journeys` holds them together — a journey marked here and untagged
+   * there would quietly shrink the smoke slice, which is the kind of failure
+   * that shows up as a fast green run rather than a red one.
+   */
   readonly smoke: boolean
 }
 
