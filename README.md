@@ -19,7 +19,9 @@ positions, both defensible:
 | `page-first`    | A page owns its selectors and exposes only intentions — `login(user)`, never `usernameField`. A test cannot reach a selector at all. |
 
 Both cover the same journeys, run under the same configuration, and are held to
-that by `check:journeys`, which fails when either package is missing one.
+that by `check:journeys`, which fails when either package is missing one — and
+also when the two disagree about which journeys are smoke, or when a scope the
+dashboard can dispatch names a spec file that does not exist.
 
 ## The subject
 
@@ -57,10 +59,12 @@ scope   all | smoke | auth | catalogue | cart | checkout | defects
 ```
 
 `scope` is a spec file for every value but `all` and `smoke`. That is not
-cosmetic: these journeys are grouped by file rather than by tag, and
-`--grep @auth` would match nothing — which Playwright reports as a **success
-with zero tests**, so the dashboard would record a green run that asserted
-nothing.
+cosmetic: these journeys are grouped by file rather than by tag, so
+`--grep @auth` would match nothing at all. Playwright is loud about that —
+`Error: No tests found`, exit 1 — and the workflow turns any non-zero exit into
+a failed callback, so the dashboard would show a **failed run for a slice that
+simply does not exist by that name**. Selecting the file means the slice either
+runs or is caught by `check:journeys` before anyone dispatches it.
 
 The report steps are skipped unless a caller passed a `run_id`, so a
 hand-started run costs nothing extra. Reporting back also needs

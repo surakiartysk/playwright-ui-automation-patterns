@@ -207,13 +207,28 @@ first time the two drifted.
 What differs is what the inputs _mean_. The API suite's `scope` is a tag. Here
 it names a spec file, because these journeys are grouped by file.
 
-**That difference is dangerous in a specific way.** `--grep @auth` against
-file-grouped tests matches nothing, and Playwright reports "no tests found" as
-a **success with zero tests**. The dashboard would have recorded a green run
-that asserted nothing — the worst available failure, because nobody
-investigates green. The workflow therefore selects a file for every value but
-`all` and `smoke`, and the dashboard's own contract test holds both workflows'
-accepted values so a slice this suite would refuse cannot be offered.
+**That difference is dangerous in a specific way** — though not the way this
+decision first claimed. `--grep @auth` against file-grouped tests matches
+nothing, and the original reasoning here was that Playwright reports "no tests
+found" as a success with zero tests, so the dashboard would have recorded a
+green run that asserted nothing.
+
+Measured, that is wrong: Playwright 1.63 answers an empty selection with
+`Error: No tests found` and exit 1, and `on-demand.yml` turns any non-zero exit
+into `failed=true`, which the callback reports as a failed run and the job
+re-raises. Nothing goes green.
+
+The real danger is narrower and still worth designing against: the failure
+carries no information. Someone who picks `auth` from the dashboard sees a
+suite that appears broken, on a repository they may not have open, for a slice
+that simply does not exist by that name. Diagnosing it means reading a workflow
+in another repository to discover that `scope` means two different things.
+
+The workflow therefore selects a file for every value but `all` and `smoke`;
+`check:journeys` compares those options against the spec files in both
+directions so a stale one is caught here rather than dispatched; and the
+dashboard's own contract test holds both workflows' accepted values so a slice
+this suite would refuse cannot be offered.
 
 **Trade-off.** Two repositories now have to agree about a vocabulary neither
 owns. The dashboard lists this suite's journey groups in its own source, and a

@@ -41,9 +41,13 @@ pnpm --filter @swag-lab/locator-first exec playwright test --grep @smoke
 ```
 
 Watch out for `--grep` with a journey group: **`--grep @auth` matches nothing**,
-because these journeys are grouped by spec file rather than by tag, and
-Playwright reports "no tests found" as a _success with zero tests_. Only
+because these journeys are grouped by spec file rather than by tag. Only
 `@smoke` is a tag. Name the file instead.
+
+Playwright says so plainly — `Error: No tests found`, exit 1 — so locally this
+costs you a second. It matters more from the dashboard, where the same exit
+code arrives as a failed run and reads like a broken suite; `check:journeys`
+holds the dispatchable scopes against the spec files for that reason.
 
 ### Two things that differ from the API sibling
 
