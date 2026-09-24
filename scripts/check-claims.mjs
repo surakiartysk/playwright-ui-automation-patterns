@@ -240,6 +240,7 @@ if (users) {
     'README.md',
     'CLAUDE.md',
     'docs/decisions.md',
+    'docs/how-it-was-built.md',
     'docs/architecture.md',
     'packages/shared-journeys/src/users.ts',
   ]
