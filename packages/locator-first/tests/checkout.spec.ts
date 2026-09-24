@@ -2,6 +2,7 @@ import type { Locator } from '@playwright/test'
 import { test, expect, journey } from './fixtures.js'
 import { users } from '@swag-lab/shared-journeys'
 import { checkoutLocators } from '../src/locators/checkout.js'
+import { inventoryLocators } from '../src/locators/inventory.js'
 import { signIn, addToCart, openCart, fillAddress } from '../src/pages/index.js'
 
 const BACKPACK = 'sauce-labs-backpack'
@@ -71,8 +72,8 @@ test.describe('Checking out', () => {
 
     // One item went in; one item must be listed. A summary that quietly drops
     // a line is a customer charged for something they will not receive.
-    await expect(page.getByTestId('inventory-item')).toHaveCount(1)
-    await expect(page.getByTestId('inventory-item-name')).toHaveText('Sauce Labs Backpack')
+    await expect(inventoryLocators.items(page)).toHaveCount(1)
+    await expect(inventoryLocators.names(page)).toHaveText('Sauce Labs Backpack')
   })
 
   test(`${journey('checkout.cancel-keeps-the-cart')} — cancelling returns to the cart with its items intact`, async ({
@@ -96,9 +97,9 @@ test.describe('Checking out', () => {
     await checkoutLocators.cancel(page).click()
 
     await expect(page).toHaveURL(/cart\.html/)
-    await expect(page.getByTestId('inventory-item')).toHaveCount(2)
+    await expect(inventoryLocators.items(page)).toHaveCount(2)
     // And the right two, not merely two of something.
-    await expect(page.getByTestId('inventory-item-name')).toContainText([
+    await expect(inventoryLocators.names(page)).toContainText([
       'Sauce Labs Backpack',
       'Sauce Labs Bike Light',
     ])

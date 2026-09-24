@@ -108,11 +108,11 @@ test.describe('The product list', () => {
      * which was never the slow part. The count is what actually distinguishes
      * the two pages, so it is what gets waited on.
      */
-    await expect(page.getByTestId('inventory-item-name')).toHaveCount(1)
+    await expect(inventoryLocators.names(page)).toHaveCount(1)
 
     // The detail page must show the same product, not just *a* product — the
     // classic off-by-one in a list-to-detail link.
-    await expect(page.getByTestId('inventory-item-name')).toHaveText(firstName ?? '')
-    await expect(page.getByTestId('inventory-item-price')).toHaveText(firstPrice ?? '')
+    await expect(inventoryLocators.names(page)).toHaveText(firstName ?? '')
+    await expect(inventoryLocators.prices(page)).toHaveText(firstPrice ?? '')
   })
 })

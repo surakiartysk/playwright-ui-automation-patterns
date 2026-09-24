@@ -11,7 +11,7 @@ test.describe('Signing in', () => {
     await signIn(page, users.standard)
 
     await expect(page).toHaveURL(/inventory\.html/)
-    await expect(page.getByTestId('title')).toHaveText('Products')
+    await expect(inventoryLocators.title(page)).toHaveText('Products')
   })
 
   test(`${journey('auth.locked-out')} @smoke — a locked-out user is refused, and told why`, async ({

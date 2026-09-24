@@ -18,7 +18,7 @@
  * themselves, so the only way to make this pass is to make the docs true.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -186,6 +186,38 @@ for (const pkg of PACKAGES) {
     if (!found) {
       fail(`docs/comparison.md: the ${pkg} ${label} figure (${value}) is not in the table`)
     }
+  }
+}
+
+// ── Tests hold no selectors, in either package ────────────────────────────
+//
+// Both positions in the README are claims about where selectors live, and
+// neither held. `page-first` says a test "cannot reach a selector at all", but
+// its tests receive Playwright's `page` and nothing stopped a
+// `page.locator(…)`. `locator-first` says moving a control "touches
+// `src/locators/` and nothing else — no test changes", while eight lines of
+// its tests called `page.getByTestId(…)` directly; renaming
+// `inventory-item-name` would have meant editing four of them. And the
+// locator counts above walk `src` only, so a selector in a test was invisible
+// to them too.
+//
+// So a test may still use `page` — to navigate, or to assert on the URL — but
+// any call that binds to the DOM belongs in the package's own source.
+const SELECTOR_CALL = /\.locator\(|\bgetBy[A-Z]\w*\(|\$\$?\(/
+
+for (const pkg of PACKAGES) {
+  for (const file of walk(join(ROOT, 'packages', pkg, 'tests'))) {
+    if (!file.endsWith('.ts')) continue
+    const lines = readFileSync(file, 'utf8').split('\n')
+    lines.forEach((line, index) => {
+      if (SELECTOR_CALL.test(line)) {
+        fail(
+          `${relative(ROOT, file)}:${index + 1}: a test binds to the DOM directly. ` +
+            `Selectors live in packages/${pkg}/src — the README's claim for this package ` +
+            'is that tests never hold one.',
+        )
+      }
+    })
   }
 }
 
