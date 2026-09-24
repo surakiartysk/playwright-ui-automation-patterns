@@ -128,6 +128,11 @@ document that states it. It is there because that one sentence was wrong in
 four documents at once: they said four accounts were broken when five carry a
 defect, each copy written from memory instead of from the table.
 
+It also fails on any selector in a test file, in either package —
+`page.locator(…)`, `getBy…(…)`, `$(…)`. A test may use `page` to navigate or to
+check the URL, but binding to the DOM belongs in `src/`: that is the one claim
+both styles make, and it held in neither until this check made it hold.
+
 ## Adding a journey
 
 1. **Add the id and claim** to `packages/shared-journeys/src/journeys.ts`. The

@@ -2,6 +2,8 @@ import type { Page, Locator } from '@playwright/test'
 
 /** The product list, and the cart badge that reflects it. */
 export const inventoryLocators = {
+  /** The heading every signed-in page carries — "Products" on the list. */
+  title: (page: Page): Locator => page.getByTestId('title'),
   container: (page: Page): Locator => page.getByTestId('inventory-list'),
   items: (page: Page): Locator => page.getByTestId('inventory-item'),
   names: (page: Page): Locator => page.getByTestId('inventory-item-name'),
