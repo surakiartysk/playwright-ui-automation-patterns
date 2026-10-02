@@ -78,7 +78,7 @@ in `docs/decisions.md`.
 
 ## The honest limit
 
-Ten journeys against a small, well-behaved application. The differences above
+Twenty journeys against a small, well-behaved application. The differences above
 are real but they are measured at a scale where both styles work. A suite of
 two hundred tests against a hostile page might separate them differently, and
 this repo cannot say.

@@ -50,8 +50,8 @@ pnpm verify            # format, lint, types, journey parity, tests
 
 `.github/workflows/on-demand.yml` accepts a dispatch, runs the chosen slice,
 builds one merged Allure report from both packages, uploads it, and posts a
-signed result back — the same contract the API suite honours, so one dashboard
-drives both.
+signed result back — the same contract the API suite honours, so one
+[dashboard](https://github.com/surakiartysk/playwright-run-dashboard) drives both.
 
 ```
 style   both | locator-first | page-first

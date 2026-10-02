@@ -137,7 +137,8 @@ both styles make, and it held in neither until this check made it hold.
 
 1. **Add the id and claim** to `packages/shared-journeys/src/journeys.ts`. The
    `claim` is what a report should say, in product words — not a description of
-   the test. Set `smoke: true` only if it should run on every push.
+   the test. Set `smoke: true` only if it belongs in the smoke slice — the
+   `smoke` scope the dashboard can dispatch, and `pnpm test:smoke`.
 2. **Write it in both packages**, each in its own idiom:
    - `locator-first` — a locator in `src/locators/`, and any clicking or
      waiting in `src/pages/index.ts`. A locator resolves and never acts.
