@@ -99,9 +99,9 @@ application: the cart lives in the browser's own storage, so a shared session
 would let one test's cart leak into another's assertions. Signing in is a
 second or two; a cross-test leak is an afternoon.
 
-Tests within a file run in parallel, and both packages run concurrently in CI —
-they bind no ports and share no state, unlike the API sibling whose two
-packages each start a mock on the same port.
+Tests within a file run in parallel, and the on-demand workflow runs both
+packages at once — they bind no ports and share no state, unlike the API sibling
+whose two packages each start a mock on the same port.
 
 ## Running it
 

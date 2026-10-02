@@ -183,7 +183,7 @@ inside the page object. The application publishes `data-test`, and
 `testIdAttribute` is set in both configs so `getByTestId` binds to it — without
 that, every `getByTestId` silently matches nothing.
 
-One deliberate exception is recorded in `inventory.ts`: the burger menu is
+The exception worth knowing is recorded in `inventory.ts`: the burger menu is
 reached by `#react-burger-menu-btn` rather than its `data-test` element,
 because that attribute sits on an `<img>` inside the button and the button
 intercepts the click. It is the one place the published contract points at the

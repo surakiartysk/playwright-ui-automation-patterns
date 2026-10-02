@@ -39,8 +39,8 @@ where each style keeps its knowledge.
 
 ## Where each one wins
 
-**`page-first` reads better at the call site.** Its auth tests are three lines
-each:
+**`page-first` reads better at the call site.** Most of its auth tests are two
+lines:
 
 ```ts
 await login.signIn(users.lockedOut)

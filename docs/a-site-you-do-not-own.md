@@ -48,11 +48,12 @@ prefix match is wanted.
 
 Those seven are three selectors, each listed in `scripts/check-claims.mjs` with
 its reason, and `check:claims` fails on a fourth appearing or on one of the
-three falling out of use. Two are the burger menu, where the published
-`data-test` sits on an element the button intercepts clicks for. The third is
-the product image, and it is listed honestly: nothing here explains why it is
-bound to layout classes, and if the application publishes a test id for it,
-that is what it should use.
+three falling out of use. Two are the burger menu: the button, because the
+published `data-test` sits on the image inside it and the button intercepts the
+click, and the panel whose `aria-hidden` the suite waits on. The third is the
+product image, and it is listed honestly: nothing here explains why it is bound
+to layout classes, and if the application publishes a test id for it, that is
+what it should use.
 
 The number above is not maintained by hand — `check:claims` derives it from the
 tree and fails when this paragraph goes stale, for the same reason every other

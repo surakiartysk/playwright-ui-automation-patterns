@@ -26,16 +26,16 @@ export default defineConfig({
     ? [['line'], ['allure-playwright', { resultsDir: 'allure-results' }]]
     : [['list']],
 
-  /*
-   * The application publishes `data-test`, not Playwright's default
-   * `data-testid`. Setting it here means every `getByTestId` in both packages
-   * binds to the contract the app actually offers, instead of each locator
-   * spelling out an attribute selector.
-   */
   expect: { timeout: 5_000 },
 
   use: {
     baseURL: 'https://www.saucedemo.com',
+    /*
+     * The application publishes `data-test`, not Playwright's default
+     * `data-testid`. Setting it here means every `getByTestId` in both packages
+     * binds to the contract the app actually offers, instead of each locator
+     * spelling out an attribute selector.
+     */
     testIdAttribute: 'data-test',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',

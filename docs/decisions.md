@@ -235,7 +235,7 @@ owns. The dashboard lists this suite's journey groups in its own source, and a
 spec file renamed here goes stale there — caught by a test in the _other_ repo,
 which is a strange place for this repo's contributor to find out. The
 alternative was an endpoint serving the list, which is a network round trip to
-learn a constant that changes twice a year.
+learn a constant that changes only when a spec file is added or renamed.
 
 The second cost is that this suite now has a reason to care about a deployment
 it cannot see. The report steps are skipped without a `run_id`, so a

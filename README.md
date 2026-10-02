@@ -43,7 +43,7 @@ pnpm exec playwright install chromium
 pnpm test              # both packages
 pnpm test:locator      # one style
 pnpm test:page         # the other
-pnpm verify            # format, lint, types, journey parity, tests
+pnpm verify            # format, lint, types, journey parity, claims, tests
 ```
 
 ## Running it from the dashboard
@@ -96,6 +96,7 @@ clearing the cart badge while leaving every add button reading Remove. A suite
 that only walks the happy path proves it can drive a browser, not that it can
 catch anything.
 
-What is not done: the sort tests cover two of the four orderings the control
-offers, and nothing exercises the responsive layout. `check:journeys` holds
-both packages to whatever is added next.
+What is not done: the sort tests exercise three of the four orderings the
+control offers — price high-to-low is the one left out — and nothing exercises
+the responsive layout.
+`check:journeys` holds both packages to whatever is added next.
