@@ -19,9 +19,9 @@ positions, both defensible:
 | `page-first`    | A page owns its selectors and exposes only intentions — `login(user)`, never `usernameField`. A test cannot reach a selector at all. |
 
 Both cover the same journeys, run under the same configuration, and are held to
-that by `check:journeys`, which fails when either package is missing one — and
-also when the two disagree about which journeys are smoke, or when a scope the
-dashboard can dispatch names a spec file that does not exist.
+that by `check:journeys`, which fails when either package is missing one or
+skips one — and also when the two disagree about which journeys are smoke, or
+when a scope the dashboard can dispatch names a spec file that does not exist.
 
 ## The subject
 

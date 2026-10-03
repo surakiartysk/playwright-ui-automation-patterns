@@ -110,8 +110,10 @@ side is quietly better tested — in the API sibling that was not hypothetical,
 where one package was missing two authentication cases and looked better
 protected for reasons unrelated to its style.
 
-It checks a journey id is _claimed_, not that it is honoured. The mutation
-discipline above is what covers the rest.
+It checks a journey id is _claimed_ by a test that runs — a commented-out
+test claims nothing, and any `test.skip`, `test.fixme` or `test.fail`, in a
+title or inside a body, fails the check — not that it is honoured. The
+mutation discipline above is what covers the rest.
 
 ### `check:claims`
 

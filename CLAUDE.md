@@ -24,9 +24,9 @@ Duplication between them is the experiment's control, not an oversight to clean
 up.
 
 Any change to behaviour must land in **both** packages, or the comparison stops
-being fair. `pnpm check:journeys` enforces that both cover the same journeys,
-that the `smoke` flag and the `@smoke` tag say the same thing in both, and that
-every dispatchable scope names a spec file that exists. It does not check the
+being fair. `pnpm check:journeys` enforces that both cover the same journeys
+and skip none of them, that the `smoke` flag and the `@smoke` tag say the same
+thing in both, and that every dispatchable scope names a spec file that exists. It does not check the
 two assert equally well, which is still on you.
 
 ## Non-negotiables

@@ -44,13 +44,28 @@ function* walk(dir) {
   }
 }
 
+/**
+ * A spec's source with its comments removed.
+ *
+ * A test that has been commented out still contains `journey('id')`, and read
+ * raw it went on covering its journey.
+ *
+ * @param {string} file - Spec file path
+ * @returns {string} Source without block or whole-line comments
+ */
+function specSource(file) {
+  return readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+}
+
 /** Ids a package claims, via `journey('id')` in its specs. */
 function claimedBy(pkg) {
   const dir = join(ROOT, 'packages', pkg, 'tests')
   const claimed = new Set()
   try {
     for (const file of walk(dir)) {
-      const src = readFileSync(file, 'utf8')
+      const src = specSource(file)
       for (const m of src.matchAll(/journey\(\s*'([^']+)'/g)) claimed.add(m[1])
     }
   } catch {
@@ -79,7 +94,7 @@ function smokeTaggedBy(pkg) {
   const tagged = new Map()
   try {
     for (const file of walk(dir)) {
-      const src = readFileSync(file, 'utf8')
+      const src = specSource(file)
       // The id and the rest of that title's template literal, up to its
       // closing backtick.
       for (const m of src.matchAll(/journey\(\s*'([^']+)'\s*\)\}([^`]*)`/g)) {
@@ -92,6 +107,45 @@ function smokeTaggedBy(pkg) {
   return tagged
 }
 
+/**
+ * Every place a package skips, fixmes or expects to fail a test.
+ *
+ * A skipped journey is not a covered one, but it still carries its
+ * `journey('id')` — so this check, and the test count in check:claims, went on
+ * reporting full coverage. A `test.skip(true, '…')` inside a test body showed
+ * it most plainly: every check stayed green, and only a line count in the
+ * comparison table moved, which its failure message said to update.
+ *
+ * Refused outright rather than allowed with a reason, because nothing here is
+ * skipped today and the application is public, so any state a journey needs
+ * can be reached. The cost: a journey that ever genuinely cannot run — the
+ * site down for a week, say — has to be removed from the shared list in the
+ * same change, so the gap is declared rather than skipped.
+ *
+ * @param {string} pkg - Package directory name
+ * @returns {string[]} Problems, one per occurrence
+ */
+function skipsIn(pkg) {
+  const dir = join(ROOT, 'packages', pkg, 'tests')
+  const found = []
+  try {
+    for (const file of walk(dir)) {
+      const lines = specSource(file).split('\n')
+      for (const [index, line] of lines.entries()) {
+        const m = /\btest(?:\.describe)?\.(skip|fixme|fail)\s*\(/.exec(line)
+        if (m) {
+          const where = `${file.slice(ROOT.length)}:${index + 1}`
+          const call = m[0].replace(/\s*\($/, '')
+          found.push(`${pkg}: ${where} calls ${call} — a skipped journey is not a covered one`)
+        }
+      }
+    }
+  } catch {
+    // Reported elsewhere as a package claiming nothing.
+  }
+  return found
+}
+
 const declared = declaredJourneys()
 const smoke = declaredSmoke()
 const problems = []
@@ -102,6 +156,7 @@ for (const pkg of PACKAGES) {
   const unknown = [...claimed].filter((id) => !declared.includes(id))
 
   for (const id of missing) problems.push(`${pkg}: does not cover '${id}'`)
+  problems.push(...skipsIn(pkg))
   for (const id of unknown) {
     problems.push(`${pkg}: claims '${id}', which is not a declared journey`)
   }
@@ -192,5 +247,5 @@ if (problems.length > 0) {
 
 console.log(
   `✓ check:journeys — both packages cover all ${declared.length} journeys, ` +
-    `agree on the ${smoke.size} smoke tags, and every scope names a spec that exists`,
+    `agree on the ${smoke.size} smoke tags, skip none of them, and every scope names a spec that exists`,
 )
