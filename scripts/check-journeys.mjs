@@ -54,9 +54,11 @@ function* walk(dir) {
  * @returns {string} Source without block or whole-line comments
  */
 function specSource(file) {
+  // Newlines inside a comment are kept, so a line number reported below is
+  // the line in the file.
   return readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ''))
+    .replace(/^[ \t]*\/\/.*$/gm, '')
 }
 
 /** Ids a package claims, via `journey('id')` in its specs. */
