@@ -39,24 +39,29 @@ export class CheckoutPage {
     await this.page.getByTestId('continue-shopping').click()
   }
 
-  /** The three money lines, as numbers. */
-  async summaryTotals(): Promise<{ itemTotal: number; tax: number; total: number }> {
+  /** The three money lines, as numbers, and the sum of the prices listed above them. */
+  async summaryTotals(): Promise<{
+    itemTotal: number
+    tax: number
+    total: number
+    listed: number
+  }> {
     const money = async (id: string) =>
       Number(((await this.page.getByTestId(id).textContent()) ?? '').replace(/[^0-9.]/g, ''))
+    const itemTotal = await money('subtotal-label')
+    const prices = await this.page.getByTestId('inventory-item-price').allTextContents()
     return {
-      itemTotal: await money('subtotal-label'),
+      itemTotal,
       tax: await money('tax-label'),
       total: await money('total-label'),
+      listed: prices.reduce((sum, price) => sum + Number(price.replace('$', '')), 0),
     }
   }
 
+  /** Exactly these names, in this order — not names that merely contain them. */
   async expectOrderLists(names: string[]): Promise<void> {
     await expect(this.page.getByTestId('inventory-item')).toHaveCount(names.length)
-    for (const name of names) {
-      await expect(
-        this.page.getByTestId('inventory-item-name').filter({ hasText: name }),
-      ).toHaveCount(1)
-    }
+    await expect(this.page.getByTestId('inventory-item-name')).toHaveText(names)
   }
 
   async expectBackInCartWith(count: number): Promise<void> {

@@ -34,7 +34,7 @@ test.describe('Checking out', () => {
     checkout,
   }) => {
     await checkout.fillAddress({ firstName: 'Ada', lastName: 'Lovelace', postalCode: 'E1 6AN' })
-    const { itemTotal, tax, total } = await checkout.summaryTotals()
+    const { itemTotal, tax, total, listed } = await checkout.summaryTotals()
 
     /*
      * Arithmetic is where a quiet bug lives: every figure renders, the page
@@ -43,15 +43,29 @@ test.describe('Checking out', () => {
     expect(itemTotal).toBeGreaterThan(0)
     expect(total).toBeCloseTo(itemTotal + tax, 2)
     expect(tax).toBeCloseTo(Math.round(itemTotal * 8) / 100, 2)
+
+    // And the item total is the sum of the prices listed above it. Consistency
+    // between the three figures alone passes when all three are wrong together,
+    // and the listed prices are on the same page, so nothing needs hard-coding.
+    expect(itemTotal).toBeCloseTo(listed, 2)
   })
 
   test(`${journey('checkout.lists-what-was-ordered')} — the summary lists exactly what the cart held`, async ({
+    page,
+    inventory,
     checkout,
   }) => {
+    // Two items, for the reason the cancel test gives: with one, a summary that
+    // lists only the first line is indistinguishable from a correct one.
+    await page.goto('/inventory.html')
+    await inventory.addToCart(BIKE_LIGHT)
+    await inventory.openCart()
+    await checkout.begin()
     await checkout.fillAddress({ firstName: 'Ada', lastName: 'Lovelace', postalCode: 'E1 6AN' })
+
     // A summary that drops a line is a customer charged for something they
     // will not receive.
-    await checkout.expectOrderLists(['Sauce Labs Backpack'])
+    await checkout.expectOrderLists(['Sauce Labs Backpack', 'Sauce Labs Bike Light'])
   })
 
   test(`${journey('checkout.cancel-keeps-the-cart')} — cancelling returns to the cart with its items intact`, async ({

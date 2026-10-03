@@ -40,9 +40,13 @@ test.describe('Signing in', () => {
      * The point of this test is the *absence* of detail. An error naming which
      * half was wrong tells an attacker that the username exists, which turns a
      * password guess into an account enumeration.
+     *
+     * Asserted by what the message does say — the one that names neither half.
+     * Forbidding two phrasings was tried first and let "Username not found"
+     * through. The cost is that this pins the application's wording: a
+     * different but equally vague message goes red and needs a human to look.
      */
-    await expect(error).not.toContainText(/password is incorrect/i)
-    await expect(error).not.toContainText(/no such user/i)
+    await expect(error).toContainText('Username and password do not match any user')
   })
 
   test(`${journey('auth.protects-pages-behind-login')} @smoke — a signed-out visitor asking for a page directly is refused`, async ({

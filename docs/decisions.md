@@ -95,6 +95,8 @@ toolchain optimises away is indistinguishable from a test that does not care,
 and it fails in the safe-looking direction: it reports a gap that is not there.
 Mutations have to change behaviour the runtime actually executes.
 
+Decision 11 is the same discipline applied to the application, and it did find things.
+
 **Trade-off.** Mutation testing is done by hand here, so it is only as complete
 as the person doing it was patient, and nothing re-runs it when the code
 changes — a mutation proven in September says nothing about the assertion after
@@ -341,6 +343,83 @@ locator at all — `sortByPriceAscending` now does not return until the list has
 reordered. Same bug, same fix, nine lines of test versus eleven lines of
 source. Neither is better; it is the trade this repo exists to show, arriving
 on its own.
+
+## 11. The application was mutated, and seven tests asserted less than they claimed
+
+Decision 5 mutated the _suite_ by hand and found nothing alarming. This time
+the mutations went into the _application_: forty small defects injected into
+the running saucedemo page — a badge one too high, tax at ten percent, a
+product name that renders empty — and nine wrong edits to each package's own
+page objects and helpers. Every one was run against both packages, so the
+question is not only "does a test notice" but "do the two notice the same".
+
+Before any fix, 41 of the 49 turned the same journeys red in both packages. The
+other eight are the interesting ones.
+
+**Four defects turned nothing red in either package:**
+
+- A wrong-password message that said "Username not found". The test forbade two
+  phrasings — "password is incorrect" and "no such user" — and this is a third.
+- An item total a dollar too high, with tax and total worked out from it. The
+  totals test checked the three figures against each other, so three wrong
+  figures agreed.
+- A summary that listed only the first line of an order. The test ordered one
+  item, so "only the first" and "all of them" are the same page.
+- A cart page naming every product "(Refurbished)". The cancel test compared
+  names with `toContainText`, which is a substring match.
+
+**One defect turned red in only one package.** A summary naming the backpack
+"Sauce Labs Backpack (Refurbished)" failed `locator-first` and passed
+`page-first`. The two were not asserting the same thing: `locator-first` used
+`toHaveText`, an exact match, and `page-first` hid a substring match behind a
+method called `expectOrderLists`.
+
+**Two more were caught, but not by the test that claims the behaviour.** A
+product with an empty name, and one whose image had no `src`, failed
+`sorts-by-name` and `defect.problem-user-images`. `catalogue.lists-products` —
+"every product shows a name, a price and an image" — counted elements and
+stayed green.
+
+**And one was a race.** Making sign-in take 400ms turned both sort tests red
+in both packages: they snapshot the list with `allTextContents`, straight after
+a `beforeEach` whose `signIn` returns when it has clicked submit. It is the
+mistake decision 10 describes, a fourth time, in the one place the earlier
+fixes did not reach.
+
+Each is fixed in both packages, in each one's idiom, and the mutation that
+exposed it now turns the same journeys red in both — except the slow sign-in,
+which now turns none red because the race is gone. Run again after the fixes,
+46 of the 49 fail the same journeys in both packages. The sort tests wait for the
+list before they read it; `lists-products` asserts text and `src`, not counts;
+wrong-password asserts the one message that names neither half; the totals test
+also sums the listed prices; the summary test orders two items; names are
+compared whole.
+
+The remaining differences between the packages were not weaknesses. Three
+suite-side mutations differed because of structure: `locator-first`'s defect
+tests call locators directly and so never touch a broken `addToCart` helper,
+while `page-first` routes everything through methods and feels it; the one
+`removeFromCart` locator in `locator-first` serves a click and a later
+assertion, where `page-first` spells the two separately; and `page-first` waits
+for the list with a helper that also counts prices. A single extra `page-first`
+sort failure in one run was the race above, seen once under load.
+
+**One thing nearly went wrong with the technique, and is worth the same
+warning decision 5 gives.** Three of the application mutations first reported
+"nothing caught it" and were wrong. The defect was real — probing the live page
+confirmed it — but it was applied after a 100–300ms delay, and the test had
+already finished by then. A mutation has to be in force when the assertion
+runs, and "survived" is only a finding after you have looked at the page.
+
+**Trade-off.** Most of the new assertions ask a more specific question and so
+fail more readily. The wrong-password test now pins the application's wording:
+a different, equally vague message goes red and needs a human to decide it is
+fine. Exact names break if the catalogue is renamed, and two-item tests are
+longer than one-item ones. The mutations are injected into the DOM, so they
+test what the page shows and say nothing about what a server does. The harness
+that ran them is not in this repository, so the result is a record and not a
+check: nothing re-runs it when a journey changes, which is the gap decision 5
+names and this does not close.
 
 ---
 

@@ -83,6 +83,19 @@ Neither was found by a failure. They were found by reading the assertions and
 asking what would have to break for them to go red. Triage does not only happen
 when the suite is red.
 
+### The one that had never failed
+
+Both sort tests read the product list straight after `signIn` returned, which
+is when the submit button has been clicked and not when the list exists. They
+passed 200 of 200 runs at twelve workers, and 120 of 120 of the sort tests
+alone at twenty-four. Nothing was red, so nothing was flaky by the definition
+above.
+
+They were found by making sign-in take 400ms: both tests then read an empty
+list, in both packages. A stress run only finds the races the machine happens
+to produce; slowing the thing upstream on purpose finds the ones it does not.
+See [decision 11](decisions.md#11-the-application-was-mutated-and-seven-tests-asserted-less-than-they-claimed).
+
 ### The one that is APP-CHANGED on purpose
 
 Two journeys assert defects the application ships deliberately: `problem_user`

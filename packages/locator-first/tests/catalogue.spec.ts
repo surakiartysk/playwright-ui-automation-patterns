@@ -9,6 +9,16 @@ const value = (p: string) => Number(p.replace('$', ''))
 test.describe('The product list', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page, users.standard)
+
+    /*
+     * `signIn` returns once it has clicked submit, not once the list is there.
+     * The sort tests below take a snapshot of the list with `allTextContents`,
+     * which does not retry — with sign-in made to take 400ms, both read an empty
+     * list and failed. Every other test reaches its first `expect` before it
+     * reads anything, so this is the one place the wait has to be written.
+     */
+    await expect(page).toHaveURL(/inventory\.html/)
+    await expect(inventoryLocators.title(page)).toHaveText('Products')
   })
 
   test(`${journey('catalogue.lists-products')} @smoke — every product shows a name, a price and an image`, async ({
@@ -29,6 +39,15 @@ test.describe('The product list', () => {
     // A price that renders empty is still an element, so assert on the text.
     for (const price of await inventoryLocators.prices(page).all()) {
       await expect(price).toHaveText(/^\$\d+\.\d{2}$/)
+    }
+
+    // The same goes for the name and the image: a count says an element exists,
+    // not that it says or shows anything.
+    for (const name of await inventoryLocators.names(page).all()) {
+      await expect(name).toHaveText(/\S/)
+    }
+    for (const image of await inventoryLocators.images(page).all()) {
+      await expect(image).toHaveAttribute('src', /\S/)
     }
   })
 

@@ -42,11 +42,11 @@ can show the cost of.
 ### Which means this repo's own count is the claim
 
 An argument for test ids is only as good as the suite making it. Across both
-packages this suite binds **7** locators to page structure; everything else goes
+packages this suite binds **6** locators to page structure; everything else goes
 through `data-test`, either by `getByTestId` or by an attribute selector where a
 prefix match is wanted.
 
-Those seven are three selectors, each listed in `scripts/check-claims.mjs` with
+Those six are three selectors, each listed in `scripts/check-claims.mjs` with
 its reason, and `check:claims` fails on a fourth appearing or on one of the
 three falling out of use. Two are the burger menu: the button, because the
 published `data-test` sits on the image inside it and the button intercepts the

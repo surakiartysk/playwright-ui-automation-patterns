@@ -27,13 +27,16 @@ Any change to behaviour must land in **both** packages, or the comparison stops
 being fair. `pnpm check:journeys` enforces that both cover the same journeys
 and skip none of them, that the `smoke` flag and the `@smoke` tag say the same
 thing in both, and that every dispatchable scope names a spec file that exists. It does not check the
-two assert equally well, which is still on you.
+two assert equally well. A pass that mutated the running application did, and found seven tests asserting
+less than they claimed ([decision 11](docs/decisions.md#11-the-application-was-mutated-and-seven-tests-asserted-less-than-they-claimed));
+repeating it when a journey changes is still on you.
 
 ## Non-negotiables
 
 **1. Every test must be proven able to fail.** A green suite means nothing until
 you have watched it go red for the right reason. Two vacuous assertions already
-shipped here and were found by reading, not by failing — see decision 8.
+shipped here and were found by reading, not by failing — see decision 8 — and
+seven more were found by breaking the application on purpose — see decision 11.
 
 Mutations must change behaviour **the runtime actually executes**. An early
 `if (true) return` is stripped by TypeScript and never reaches the browser, so

@@ -63,17 +63,40 @@ test.describe('Checking out', () => {
     expect(total).toBeCloseTo(itemTotal + tax, 2)
     // 8%, as the application charges. Rounded to the cent before comparing.
     expect(tax).toBeCloseTo(Math.round(itemTotal * 8) / 100, 2)
+
+    /*
+     * And the item total is the sum of the prices listed above it. Consistency
+     * between the three figures alone passes when all three are wrong together
+     * — an item total a dollar high, with tax and total worked out from it —
+     * and the listed prices are on the same page, so nothing needs hard-coding.
+     */
+    const listed = await inventoryLocators.prices(page).allTextContents()
+    expect(itemTotal).toBeCloseTo(
+      listed.reduce((sum, price) => sum + Number(price.replace('$', '')), 0),
+      2,
+    )
   })
 
   test(`${journey('checkout.lists-what-was-ordered')} — the summary lists exactly what the cart held`, async ({
     page,
   }) => {
+    /*
+     * Two items, for the reason the cancel test gives: with one, a summary that
+     * lists only the first line is indistinguishable from a correct one.
+     */
+    await page.goto('/inventory.html')
+    await addToCart(page, BIKE_LIGHT)
+    await openCart(page)
+    await checkoutLocators.checkout(page).click()
     await fillAddress(page, { firstName: 'Ada', lastName: 'Lovelace', postalCode: 'E1 6AN' })
 
-    // One item went in; one item must be listed. A summary that quietly drops
-    // a line is a customer charged for something they will not receive.
-    await expect(inventoryLocators.items(page)).toHaveCount(1)
-    await expect(inventoryLocators.names(page)).toHaveText('Sauce Labs Backpack')
+    // A summary that quietly drops a line is a customer charged for something
+    // they will not receive.
+    await expect(inventoryLocators.items(page)).toHaveCount(2)
+    await expect(inventoryLocators.names(page)).toHaveText([
+      'Sauce Labs Backpack',
+      'Sauce Labs Bike Light',
+    ])
   })
 
   test(`${journey('checkout.cancel-keeps-the-cart')} — cancelling returns to the cart with its items intact`, async ({
@@ -99,7 +122,7 @@ test.describe('Checking out', () => {
     await expect(page).toHaveURL(/cart\.html/)
     await expect(inventoryLocators.items(page)).toHaveCount(2)
     // And the right two, not merely two of something.
-    await expect(inventoryLocators.names(page)).toContainText([
+    await expect(inventoryLocators.names(page)).toHaveText([
       'Sauce Labs Backpack',
       'Sauce Labs Bike Light',
     ])

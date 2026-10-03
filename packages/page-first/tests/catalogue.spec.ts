@@ -5,8 +5,12 @@ import { users } from '@swag-lab/shared-journeys'
 const value = (p: string) => Number(p.replace('$', ''))
 
 test.describe('The product list', () => {
-  test.beforeEach(async ({ login }) => {
+  test.beforeEach(async ({ login, inventory }) => {
     await login.signIn(users.standard)
+    // `signIn` returns once it has clicked submit, not once the list is there,
+    // and the sort tests snapshot the list without retrying. With sign-in made
+    // to take 400ms, both read an empty list and failed.
+    await inventory.expectLoaded()
   })
 
   test(`${journey('catalogue.lists-products')} @smoke — every product shows a name, a price and an image`, async ({
@@ -16,6 +20,7 @@ test.describe('The product list', () => {
     // page where the other five lost theirs.
     await inventory.expectProductCount(6)
     await inventory.expectEveryPriceFormatted()
+    await inventory.expectEveryNameAndImagePresent()
   })
 
   test(`${journey('catalogue.sorts-by-price')} — sorting by price reorders the list and loses nothing`, async ({

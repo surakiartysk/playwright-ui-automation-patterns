@@ -5,6 +5,11 @@ import { expect } from '@playwright/test'
 export class InventoryPage {
   constructor(private readonly page: Page) {}
 
+  /** Bound to layout classes rather than a `data-test` — `check:claims` lists why that is allowed. */
+  private get images() {
+    return this.page.locator('.inventory_item_img img')
+  }
+
   async expectLoaded(): Promise<void> {
     await expect(this.page).toHaveURL(/inventory\.html/)
     await expect(this.page.getByTestId('title')).toHaveText('Products')
@@ -50,21 +55,29 @@ export class InventoryPage {
 
   /** Image sources, for the tests that care what is actually rendered. */
   async imageSources(): Promise<(string | null)[]> {
-    return this.page
-      .locator('.inventory_item_img img')
-      .evaluateAll((images) => images.map((image) => image.getAttribute('src')))
+    return this.images.evaluateAll((images) => images.map((image) => image.getAttribute('src')))
   }
 
   async expectProductCount(count: number): Promise<void> {
     await expect(this.page.getByTestId('inventory-item')).toHaveCount(count)
     await expect(this.page.getByTestId('inventory-item-name')).toHaveCount(count)
     await expect(this.page.getByTestId('inventory-item-price')).toHaveCount(count)
-    await expect(this.page.locator('.inventory_item_img img')).toHaveCount(count)
+    await expect(this.images).toHaveCount(count)
   }
 
   async expectEveryPriceFormatted(): Promise<void> {
     for (const price of await this.page.getByTestId('inventory-item-price').all()) {
       await expect(price).toHaveText(/^\$\d+\.\d{2}$/)
+    }
+  }
+
+  /** A count says an element exists, not that it says or shows anything. */
+  async expectEveryNameAndImagePresent(): Promise<void> {
+    for (const name of await this.page.getByTestId('inventory-item-name').all()) {
+      await expect(name).toHaveText(/\S/)
+    }
+    for (const image of await this.images.all()) {
+      await expect(image).toHaveAttribute('src', /\S/)
     }
   }
 

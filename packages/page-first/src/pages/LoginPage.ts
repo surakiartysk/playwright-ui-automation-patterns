@@ -55,11 +55,15 @@ export class LoginPage {
    *
    * An error naming which half was wrong tells an attacker the username
    * exists, turning a password guess into account enumeration.
+   *
+   * Asserted by what the message does say — the one that names neither half.
+   * Forbidding two phrasings was tried first and let "Username not found"
+   * through. The cost is that this pins the application's wording: a
+   * different but equally vague message goes red and needs a human to look.
    */
   async expectRefusalRevealsNothing(): Promise<void> {
     const error = this.page.getByTestId('error')
     await expect(error).toBeVisible()
-    await expect(error).not.toContainText(/password is incorrect/i)
-    await expect(error).not.toContainText(/no such user/i)
+    await expect(error).toContainText('Username and password do not match any user')
   }
 }

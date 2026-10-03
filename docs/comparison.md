@@ -14,17 +14,17 @@ non-comment, non-blank lines.
 
 |           | `locator-first` | `page-first` |
 | --------- | --------------- | ------------ |
-| source    | 82              | 201          |
-| tests     | 281             | 246          |
-| **total** | **363**         | **447**      |
+| source    | 82              | 213          |
+| tests     | 300             | 255          |
+| **total** | **382**         | **468**      |
 
-`locator-first` is smaller overall by 84 lines, and the split is the
+`locator-first` is smaller overall by 86 lines, and the split is the
 interesting part: its source is under half the size, while its tests are
 longer. That is the trade made visible — the knowledge has to live somewhere,
 and this style puts more of it in the test.
 
 The gap widened as the suite grew. At ten journeys it was 40 lines; at twenty
-it is 84. `page-first` pays a fixed cost per behaviour — a method on a page
+it is 86. `page-first` pays a fixed cost per behaviour — a method on a page
 object — where `locator-first` pays it once per selector and then reuses it
 from the test, so the two do not scale the same way. That is a finding about
 the styles rather than about this suite's size, and it is why these figures are
@@ -74,7 +74,45 @@ cart behind it was empty; both needed the same second assertion to close that.
 
 That is worth recording as a null result: the structure of a suite does not
 protect against a shallow assertion. Only mutation testing did — see the note
-in `docs/decisions.md`.
+in `docs/decisions.md`. A second, larger pass (below) found the one place the
+structure did change what a test asserted, and not in the direction the style
+claims for itself.
+
+## Do the two assert equally strongly?
+
+`check:journeys` proves both packages cover the same journeys. It cannot prove
+they check them as hard, so that was measured instead: 49 defects, forty
+injected into the running application and nine made to each package's own page
+objects and helpers, each run against both. The method and what it found are in
+[decision 11](decisions.md#11-the-application-was-mutated-and-seven-tests-asserted-less-than-they-claimed).
+
+|                                      | before fixes | after fixes |
+| ------------------------------------ | ------------ | ----------- |
+| same journeys red in both packages   | 41           | 46          |
+| red in neither                       | 4            | 1           |
+| red in one package and not the other | 4            | 2           |
+
+The four that turned nothing red were real gaps, and they were in both
+packages: a wrong-password message that named the field in words the test did
+not forbid, an item total shifted along with its tax and total, a summary that
+listed only the first line of an order, and product names compared as
+substrings. The one that remains "red in neither" is the slow sign-in, which
+stopped failing because the race it exposed is fixed.
+
+**The structure did matter once, and it hid the weakness.** `page-first` checked
+the order summary with `expectOrderLists`, whose body used a substring match. A
+product named "Sauce Labs Backpack (Refurbished)" passed there and failed in
+`locator-first`, which spelled the same check out in the test with an exact
+`toHaveText`. A reader of the `page-first` test sees a method whose name says
+"exactly what was ordered" and has no reason to open it. That is the cost of the
+style this document already names — assertions live out of sight — shown on a
+real defect rather than as an argument.
+
+The two that still differ are structure and not strength. `locator-first`'s
+defect tests call locators directly, so a broken `addToCart` helper never
+reaches them; `page-first` routes them through methods and they go red. And
+`page-first` waits for the product list with a helper that counts prices, so a
+broken price locator reaches one more test there.
 
 ## The honest limit
 
