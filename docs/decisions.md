@@ -200,7 +200,7 @@ runs the chosen slice, merges both packages into one Allure report, uploads it,
 and posts a signed result back.
 
 **The two workflows deliberately declare the same inputs** — `style`, `scope`,
-`workers` and `run_id`. That is a contract rather than a coincidence: GitHub rejects
+`tag`, `workers` and `run_id`. That is a contract rather than a coincidence: GitHub rejects
 a dispatch carrying an input the workflow does not declare, and it rejects the
 whole request rather than ignoring the extra. A caller that had to branch per
 suite would be a second thing to keep in step, and it would fail loudly the
@@ -208,6 +208,13 @@ first time the two drifted.
 
 What differs is what the inputs _mean_. The API suite's `scope` is a tag. Here
 it names a spec file, because these journeys are grouped by file.
+
+`tag` is optional and narrows `scope`, and here it combines with a file: Playwright
+runs the tests that are in the named file and match the grep, so `auth` with
+`smoke` is the three smoke tests in `auth.spec.ts`. Only `smoke` exists as a tag,
+and a file with none of it (`defects`) matches nothing and fails with "No tests
+found". The default is `all`, which adds nothing, so a caller that does not send
+it dispatches what it always did.
 
 **That difference is dangerous in a specific way** — though not the way this
 decision first claimed. `--grep @auth` against file-grouped tests matches

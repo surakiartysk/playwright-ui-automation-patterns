@@ -28,6 +28,14 @@ on:
         type: choice
         # Keep in sync with the spec filenames and the tags used in them.
         options: [all, smoke, auth, catalogue, cart, checkout, defects]
+      tag:
+        description: 'Optional tag to narrow the scope by: only tests carrying it. "all" adds no narrowing.'
+        required: false
+        default: 'all'
+        type: choice
+        # `smoke` is the only tag these journeys carry. A scope that names a
+        # spec file and a tag together runs the tagged tests in that file.
+        options: [all, smoke]
       workers:
         description: 'Parallel workers'
         required: false
@@ -51,7 +59,7 @@ permissions:
 
 jobs:
   run:
-    name: ${{ github.event.inputs.style || 'both' }} / ${{ github.event.inputs.scope || 'smoke' }}
+    name: ${{ github.event.inputs.style || 'both' }} / ${{ github.event.inputs.scope || 'smoke' }}${{ (github.event.inputs.tag && github.event.inputs.tag != 'all') && format(' + @{0}', github.event.inputs.tag) || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -80,6 +88,7 @@ jobs:
         run: |
           STYLE="${{ github.event.inputs.style || github.event.client_payload.style || 'both' }}"
           SCOPE="${{ github.event.inputs.scope || github.event.client_payload.scope || 'smoke' }}"
+          TAG="${{ github.event.inputs.tag || github.event.client_payload.tag || 'all' }}"
           WORKERS="${{ github.event.inputs.workers || github.event.client_payload.workers || '4' }}"
           RUN_ID="${{ github.event.inputs.run_id || github.event.client_payload.run_id || '' }}"
 
@@ -97,11 +106,20 @@ jobs:
           # broken suite rather than a slice that does not exist by that name.
           # `check:journeys` holds these options against the spec files so the
           # mismatch is caught here instead.
+          #
+          # A file and a tag are two selections and they combine: Playwright
+          # runs the tests that are in the named file AND match the grep. So the
+          # slice is held as two things — which file, and which tag — and each
+          # is quoted where it is used. `smoke` as the scope is the tag alone;
+          # `smoke` as the tag narrows whatever the scope names.
           case "$SCOPE" in
-            all)   SELECT="" ;;
-            smoke) SELECT="--grep @smoke" ;;
-            *)     SELECT="tests/$SCOPE.spec.ts" ;;
+            all|smoke) FILE="" ;;
+            *)         FILE="tests/$SCOPE.spec.ts" ;;
           esac
+          if   [ "$TAG" != "all" ]; then PATTERN="@$TAG"
+          elif [ "$SCOPE" = "smoke" ]; then PATTERN="@smoke"
+          else PATTERN=""
+          fi
 
           # `both` names the two test packages rather than using `-r`.
           #
@@ -120,11 +138,12 @@ jobs:
             *)    FILTER="--filter @swag-lab/$STYLE" ;;
           esac
 
-          echo "select=$SELECT"   >> "$GITHUB_OUTPUT"
+          echo "file=$FILE"        >> "$GITHUB_OUTPUT"
+          echo "pattern=$PATTERN"  >> "$GITHUB_OUTPUT"
           echo "filter=$FILTER"   >> "$GITHUB_OUTPUT"
           echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
           echo "run_id=$RUN_ID"   >> "$GITHUB_OUTPUT"
-          echo "Running $STYLE with scope $SCOPE on $WORKERS workers"
+          echo "Running $STYLE with scope $SCOPE, tag $TAG, on $WORKERS workers"
 
       - name: Run tests
         id: run
@@ -139,9 +158,14 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: results.json
           CI: 'true'
+          # Passed as data and quoted where used, so a value with shell syntax
+          # in it is an argument and not a command. `:+` leaves a flag out
+          # entirely when there is nothing to put after it.
+          SPEC_FILE: ${{ steps.opts.outputs.file }}
+          GREP_PATTERN: ${{ steps.opts.outputs.pattern }}
         run: |
           pnpm ${{ steps.opts.outputs.filter }} exec playwright test \
-            ${{ steps.opts.outputs.select }} \
+            ${SPEC_FILE:+"$SPEC_FILE"} ${GREP_PATTERN:+--grep "$GREP_PATTERN"} \
             --workers=${{ steps.opts.outputs.workers }} \
             --reporter=list,json,allure-playwright || echo "failed=true" >> "$GITHUB_OUTPUT"
 

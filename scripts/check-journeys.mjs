@@ -238,6 +238,32 @@ if (!optionsMatch) {
   }
 }
 
+/**
+ * The `tag` input narrows by a tag, and `smoke` is the only tag these journeys
+ * carry.
+ *
+ * A value that is not a tag matches no test, and because it is joined to the
+ * scope by AND the run fails with "No tests found" for a slice that was never
+ * there. `all` must be offered and be the default: GitHub refuses a `choice`
+ * whose default is not one of its options, and `all` is how "no tag" is said.
+ */
+const tagMatch = /\n {6}tag:[\s\S]*?default:\s*'([^']*)'[\s\S]*?options:\s*\[([^\]]+)\]/.exec(
+  workflow,
+)
+if (!tagMatch) {
+  problems.push('on-demand.yml: could not read the tag input — the check on it cannot run')
+} else {
+  const tagOptions = tagMatch[2].split(',').map((s) => s.trim())
+  const known = new Set(['all', ...(smoke.size > 0 ? ['smoke'] : [])])
+  if (tagMatch[1] !== 'all')
+    problems.push(`on-demand.yml: tag defaults to '${tagMatch[1]}'; it must be 'all'`)
+  for (const option of tagOptions) {
+    if (!known.has(option))
+      problems.push(`on-demand.yml: tag offers '${option}', which no journey carries`)
+  }
+  if (!tagOptions.includes('all')) problems.push("on-demand.yml: tag must offer 'all'")
+}
+
 if (problems.length > 0) {
   console.error(`\n✖ check:journeys — ${problems.length} problem(s)\n`)
   for (const p of problems) console.error(`  ${p}`)
