@@ -209,6 +209,14 @@ first time the two drifted.
 What differs is what the inputs _mean_. The API suite's `scope` is a tag. Here
 it names a spec file, because these journeys are grouped by file.
 
+**The callback names the tests that failed.** It used to carry totals only, so a
+run the dashboard knew had failed could not say which test without opening the
+whole report. It now also carries up to twenty failures — title, file, tags, and
+the first line of the message, cut and without terminal colour — and how many
+were left out. `.github/scripts/failures.mjs` reads them from the same
+`results.json` as the totals; `check:failures` holds it against fixtures. An
+older dashboard ignores the field.
+
 `tag` is optional and narrows `scope`, and here it combines with a file: Playwright
 runs the tests that are in the named file and match the grep, so `auth` with
 `smoke` is the three smoke tests in `auth.spec.ts`. Only `smoke` exists as a tag,

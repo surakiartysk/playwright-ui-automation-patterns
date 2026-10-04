@@ -22,7 +22,8 @@
     "format:check": "prettier --check .",
     "type-check": "pnpm -r type-check",
     "check:journeys": "node scripts/check-journeys.mjs",
-    "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:journeys && pnpm check:claims && pnpm test",
+    "check:failures": "node scripts/check-failures.mjs",
+    "verify": "pnpm format:check && pnpm lint && pnpm type-check && pnpm check:journeys && pnpm check:failures && pnpm check:claims && pnpm test",
     "check:claims": "node scripts/check-claims.mjs",
     "prepare": "husky"
   },
