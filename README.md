@@ -7,6 +7,9 @@ Companion to
 [playwright-api-automation-patterns](https://github.com/surakiartysk/playwright-api-automation-patterns),
 which asks the same question about API tests.
 
+Part of [testbydesign.dev](https://testbydesign.dev): the
+[Test Run Dashboard](https://runs.testbydesign.dev) dispatches this suite on demand.
+
 ## The question
 
 "Use page objects" is where most UI advice stops, and it is not an answer — it
