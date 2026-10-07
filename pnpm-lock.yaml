@@ -15,7 +15,7 @@ importers:
         specifier: ^26.4.1
         version: 26.4.1
       allure:
-        specifier: ^3.15.0
+        specifier: 3.16.1
         version: 3.16.1(preact@10.29.8)
       allure-playwright:
         specifier: ^3.12.0
