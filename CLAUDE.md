@@ -85,8 +85,8 @@ before touching the assertion.
 import the other. Three things have to stay in step, and only a test in _that_
 repo holds them there:
 
-- **The workflow inputs.** `on-demand.yml` declares `style`, `scope`, `workers`
-  and `run_id` — the same four names the API suite declares. GitHub rejects a
+- **The workflow inputs.** `on-demand.yml` declares `style`, `scope`, `tag`,
+  `workers` and `run_id` — the same five names the API suite declares. GitHub rejects a
   dispatch carrying an input a workflow does not declare, and rejects the whole
   request rather than ignoring the extra, so these names are a contract and not
   a convenience. Renaming one breaks every dispatch.

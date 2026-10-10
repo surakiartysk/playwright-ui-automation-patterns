@@ -59,6 +59,7 @@ signed result back — the same contract the API suite honours, so one
 ```
 style   both | locator-first | page-first
 scope   all | smoke | auth | catalogue | cart | checkout | defects
+tag     all | smoke        (optional: only the tests in scope that carry it)
 ```
 
 `scope` is a spec file for every value but `all` and `smoke`. That is not
