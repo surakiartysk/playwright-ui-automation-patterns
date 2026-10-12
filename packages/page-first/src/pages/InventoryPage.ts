@@ -48,6 +48,15 @@ export class InventoryPage {
     )
   }
 
+  /** The same wait, for the other direction: the control's price high-to-low. */
+  async sortByPriceDescending(): Promise<void> {
+    const before = await this.prices()
+    await this.page.getByTestId('product-sort-container').selectOption('hilo')
+    await expect(this.page.getByTestId('inventory-item-price')).toHaveText(
+      [...before].sort((a, b) => Number(b.replace('$', '')) - Number(a.replace('$', ''))),
+    )
+  }
+
   /** Prices as they are shown, in the order they are shown. */
   async prices(): Promise<string[]> {
     return this.page.getByTestId('inventory-item-price').allTextContents()

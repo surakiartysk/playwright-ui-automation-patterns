@@ -54,7 +54,7 @@ export const journeys = [
   },
   {
     id: 'catalogue.sorts-by-price',
-    claim: 'sorting by price low-to-high reorders the list and does not lose items',
+    claim: 'sorting by price, in either direction, reorders the list and does not lose items',
     smoke: false,
   },
   {

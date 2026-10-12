@@ -51,7 +51,7 @@ test.describe('The product list', () => {
     }
   })
 
-  test(`${journey('catalogue.sorts-by-price')} — sorting by price reorders the list and loses nothing`, async ({
+  test(`${journey('catalogue.sorts-by-price')} — sorting by price, either way, reorders the list and loses nothing`, async ({
     page,
   }) => {
     const priceText = () => inventoryLocators.prices(page).allTextContents()
@@ -82,6 +82,17 @@ test.describe('The product list', () => {
     // ...and still the same products. A sort that drops an item passes the
     // check above while being badly broken.
     expect(after.toSorted()).toEqual(before.toSorted())
+
+    // The other direction, the one the control offers and the first version of this journey
+    // left out. Waited on for the same reason, and asserted as the exact reverse of the
+    // ascending prices: equal prices are the same text, so a reversed list of them is a
+    // descending one, and a sort that shuffled or dropped an item is neither.
+    await inventoryLocators.sort(page).selectOption('hilo')
+    await expect(inventoryLocators.prices(page)).toHaveText([...after].toReversed())
+    const descending = await priceText()
+
+    expect(descending.map(value)).toEqual(descending.map(value).toSorted((a, b) => b - a))
+    expect(descending.toSorted()).toEqual(before.toSorted())
   })
 
   test(`${journey('catalogue.sorts-by-name')} — sorting Z-to-A reverses the A-to-Z order exactly`, async ({
