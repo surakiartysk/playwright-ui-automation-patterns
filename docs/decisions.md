@@ -443,3 +443,12 @@ names and this does not close.
 Write it when the reasoning is still fresh, and include the cost. If the
 trade-off section reads as "no real downside", the decision has not been
 examined hard enough yet — go back and find who it makes life worse for.
+
+**Later (12 October): the fourth ordering.** The sort tests exercised three of the four orderings the control offers;
+price high-to-low was the one left out, as the README said. `catalogue.sorts-by-price` now covers both directions, in
+both packages, asserted as the exact reverse of the ascending prices (equal prices are the same text, so a reversed list
+of them is a descending one) and as the same products. The journey stays one journey, so the counts do not move. Six
+mutations of the running page and the helpers, run against saucedemo in both packages, all red: choosing low-to-high
+for the high-to-low sort (the wait for the order times out), removing the last product after sorting, and rewriting the
+first price to `$0.01`. Cost: one test now holds two sorts, so a failure in the second is reported under the same
+name as the first; the message says which direction.

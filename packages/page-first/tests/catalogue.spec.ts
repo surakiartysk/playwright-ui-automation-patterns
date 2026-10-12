@@ -23,7 +23,7 @@ test.describe('The product list', () => {
     await inventory.expectEveryNameAndImagePresent()
   })
 
-  test(`${journey('catalogue.sorts-by-price')} — sorting by price reorders the list and loses nothing`, async ({
+  test(`${journey('catalogue.sorts-by-price')} — sorting by price, either way, reorders the list and loses nothing`, async ({
     inventory,
   }) => {
     const before = await inventory.prices()
@@ -35,6 +35,15 @@ test.describe('The product list', () => {
     expect(ascending).toEqual(ascending.toSorted((a, b) => a - b))
     // A sort that drops an item passes the check above while being broken.
     expect(after.toSorted()).toEqual(before.toSorted())
+
+    // The other direction, which the first version of this journey left out. Exactly the
+    // reverse of the ascending prices: equal prices are the same text, so a reversed list
+    // of them is a descending one, and a sort that shuffled or dropped an item is neither.
+    await inventory.sortByPriceDescending()
+    const descending = await inventory.prices()
+
+    expect(descending).toEqual(after.toReversed())
+    expect(descending.toSorted()).toEqual(before.toSorted())
   })
 
   test(`${journey('catalogue.sorts-by-name')} — sorting Z-to-A reverses the A-to-Z order exactly`, async ({

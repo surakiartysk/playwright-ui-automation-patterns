@@ -100,7 +100,7 @@ clearing the cart badge while leaving every add button reading Remove. A suite
 that only walks the happy path proves it can drive a browser, not that it can
 catch anything.
 
-What is not done: the sort tests exercise three of the four orderings the
-control offers — price high-to-low is the one left out — and nothing exercises
-the responsive layout.
+What is not done: nothing exercises the responsive layout. (The sort tests
+exercise all four orderings the control offers; price high-to-low was the one
+left out until 12 October.)
 `check:journeys` holds both packages to whatever is added next.
