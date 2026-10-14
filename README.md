@@ -91,7 +91,7 @@ just has no report link.
 
 ## Status
 
-Both suites cover all twenty journeys — 20 tests each, green, every assertion
+Both suites cover all twenty-one journeys — 21 tests each, green, every assertion
 proven able to fail by mutation before it was believed.
 
 Two of those journeys exist to catch defects the application ships on purpose:
@@ -100,7 +100,10 @@ clearing the cart badge while leaving every add button reading Remove. A suite
 that only walks the happy path proves it can drive a browser, not that it can
 catch anything.
 
-What is not done: nothing exercises the responsive layout. (The sort tests
-exercise all four orderings the control offers; price high-to-low was the one
-left out until 12 October.)
+One journey runs at a phone's width, `catalogue.fits-a-phone`: the list stacks
+in one column, nothing scrolls sideways, and the menu, the cart and every add
+button stay in reach (until 14 October nothing exercised the responsive layout).
+The sort tests exercise all four orderings the control offers (price
+high-to-low was left out until 12 October). What is not done: the cart and
+checkout are not run at a phone's width.
 `check:journeys` holds both packages to whatever is added next.

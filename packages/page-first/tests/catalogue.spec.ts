@@ -68,3 +68,33 @@ test.describe('The product list', () => {
     await inventory.expectShowingProduct(product)
   })
 })
+
+/*
+ * The only journey run at a phone's width. saucedemo lays the list out for the
+ * screen — two columns at 1280px, one from 1024px down, the sort control folded
+ * to an icon below 800px, each add button stretched to its card on a phone —
+ * and none of that was exercised: every other journey runs at Desktop Chrome's
+ * 1280×720. 390×844 is a common phone; the claim is about what a person there
+ * can still reach, not about the exact layout, so nothing here pins a pixel.
+ */
+test.describe('The product list on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ login, inventory }) => {
+    await login.signIn(users.standard)
+    await inventory.expectLoaded()
+  })
+
+  test(`${journey('catalogue.fits-a-phone')} — the products stack in one column, nothing scrolls sideways, and the menu, the cart and every add button stay in reach`, async ({
+    inventory,
+  }) => {
+    await inventory.expectOneColumn()
+    await inventory.expectNothingScrollsSideways()
+    await inventory.expectMenuAndCartInReach()
+    await inventory.expectEveryAddButtonWithinWidth()
+
+    // The farthest product, scrolled to and tapped, reaches the cart.
+    await inventory.addLastProductToCart()
+    await inventory.expectCartCount(1)
+  })
+})

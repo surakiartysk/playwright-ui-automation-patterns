@@ -438,12 +438,6 @@ names and this does not close.
 
 ---
 
-## How to add a decision
-
-Write it when the reasoning is still fresh, and include the cost. If the
-trade-off section reads as "no real downside", the decision has not been
-examined hard enough yet — go back and find who it makes life worse for.
-
 **Later (12 October): the fourth ordering.** The sort tests exercised three of the four orderings the control offers;
 price high-to-low was the one left out, as the README said. `catalogue.sorts-by-price` now covers both directions, in
 both packages, asserted as the exact reverse of the ascending prices (equal prices are the same text, so a reversed list
@@ -452,3 +446,35 @@ mutations of the running page and the helpers, run against saucedemo in both pac
 for the high-to-low sort (the wait for the order times out), removing the last product after sorting, and rewriting the
 first price to `$0.01`. Cost: one test now holds two sorts, so a failure in the second is reported under the same
 name as the first; the message says which direction.
+
+## 12. One journey at a phone's width
+
+Nothing exercised the responsive layout, and the README said so. Every journey ran at Desktop Chrome's 1280×720,
+and saucedemo does change with the screen: two columns of products at 1280px, one from 1024px down, the sort control
+folded to an icon below 800px, each add button stretched to its card on a phone. Measured at six widths before
+writing anything.
+
+`catalogue.fits-a-phone` runs the product list at 390×844 and claims what a person there can still do: the products
+stack in one column (every item at the same left edge, of more than one), nothing scrolls sideways, the menu and the
+cart are on the first screen, every add button lies inside the screen's width, and the farthest one, scrolled to and
+tapped, puts a product in the cart. Nothing pins a pixel: the claim is about reach, not about the exact layout.
+
+It went into the `catalogue` group rather than a group of its own. A new group is a new spec file, and that is three
+edits in two repositories (the CONTRIBUTING note on new groups); a journey in an existing group is one edit here.
+
+Twelve mutations, CSS injected into the running page in both packages, all red: two columns on a phone, a page wider
+than the screen, the cart and the menu pushed off the first screen, one add button pushed past the edge, and the
+farthest add button made to ignore a tap. `page-first` grew five methods on `InventoryPage` (38 lines of source),
+`locator-first` 37 lines of test and no new locator; the menu button, used twice now in `page-first`, is one getter,
+so the count of structure-bound locators stays at six.
+
+**Cost.** One phone, not a range: a layout that breaks only at 320px, or only in landscape, passes. The cart and
+checkout are not run at a phone's width. And `toBeInViewport` says an element is on the screen, not that nothing
+covers it; a tap that lands on an overlay instead is caught only for the farthest add button, which is actually
+tapped.
+
+## How to add a decision
+
+Write it when the reasoning is still fresh, and include the cost. If the
+trade-off section reads as "no real downside", the decision has not been
+examined hard enough yet — go back and find who it makes life worse for.
