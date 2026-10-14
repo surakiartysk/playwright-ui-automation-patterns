@@ -146,3 +146,61 @@ test.describe('The product list', () => {
     await expect(inventoryLocators.prices(page)).toHaveText(firstPrice ?? '')
   })
 })
+
+/*
+ * The only journey run at a phone's width. saucedemo lays the list out for the
+ * screen — two columns at 1280px, one from 1024px down, the sort control folded
+ * to an icon below 800px, each add button stretched to its card on a phone —
+ * and none of that was exercised: every other journey runs at Desktop Chrome's
+ * 1280×720. 390×844 is a common phone; the claim is about what a person there
+ * can still reach, not about the exact layout, so nothing here pins a pixel.
+ */
+test.describe('The product list on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ page }) => {
+    await signIn(page, users.standard)
+    await expect(inventoryLocators.title(page)).toHaveText('Products')
+  })
+
+  test(`${journey('catalogue.fits-a-phone')} — the products stack in one column, nothing scrolls sideways, and the menu, the cart and every add button stay in reach`, async ({
+    page,
+  }) => {
+    // One column: every product starts at the same left edge. More than one
+    // product, or a single column would be trivially true.
+    const lefts = await inventoryLocators
+      .items(page)
+      .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
+    expect(lefts.length).toBeGreaterThan(1)
+    expect(new Set(lefts).size).toBe(1)
+
+    // Nothing to scroll sideways: the page is no wider than the screen.
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(sideways).toBe(0)
+
+    // The menu and the cart are on the first screen, without scrolling.
+    await expect(inventoryLocators.menu(page)).toBeInViewport()
+    await expect(inventoryLocators.cartLink(page)).toBeInViewport()
+
+    // Every add button lies inside the screen's width, so none is cut off.
+    const width = page.viewportSize()!.width
+    const outside = await inventoryLocators.allAddButtons(page).evaluateAll(
+      (buttons, w) =>
+        buttons.filter((b) => {
+          const r = b.getBoundingClientRect()
+          return r.left < 0 || r.right > w
+        }).length,
+      width,
+    )
+    expect(outside).toBe(0)
+
+    // And the farthest one works: scrolled to and tapped, it reaches the cart.
+    const last = inventoryLocators.allAddButtons(page).last()
+    await last.scrollIntoViewIfNeeded()
+    await expect(last).toBeInViewport({ ratio: 1 })
+    await last.click()
+    await expect(inventoryLocators.cartBadge(page)).toHaveText('1')
+  })
+})

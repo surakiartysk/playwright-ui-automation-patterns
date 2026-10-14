@@ -124,7 +124,15 @@ const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
 const comparison = readFileSync(join(ROOT, 'docs/comparison.md'), 'utf8')
 
 // ── Journey count, stated in words in both documents ────────────────────────
-const WORDS = { ten: 10, twelve: 12, fifteen: 15, sixteen: 16, eighteen: 18, twenty: 20 }
+const WORDS = {
+  ten: 10,
+  twelve: 12,
+  fifteen: 15,
+  sixteen: 16,
+  eighteen: 18,
+  twenty: 20,
+  'twenty-one': 21,
+}
 
 for (const [file, text] of [
   ['README.md', readme],

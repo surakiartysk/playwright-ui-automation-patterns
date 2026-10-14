@@ -10,6 +10,11 @@ export class InventoryPage {
     return this.page.locator('.inventory_item_img img')
   }
 
+  /** The burger button, not its `data-test` image — `check:claims` lists why. One place, for two uses. */
+  private get menuButton() {
+    return this.page.locator('#react-burger-menu-btn')
+  }
+
   async expectLoaded(): Promise<void> {
     await expect(this.page).toHaveURL(/inventory\.html/)
     await expect(this.page.getByTestId('title')).toHaveText('Products')
@@ -88,6 +93,51 @@ export class InventoryPage {
     for (const image of await this.images.all()) {
       await expect(image).toHaveAttribute('src', /\S/)
     }
+  }
+
+  /** Every product starts at the same left edge: one column, of more than one product. */
+  async expectOneColumn(): Promise<void> {
+    const lefts = await this.page
+      .getByTestId('inventory-item')
+      .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
+    expect(lefts.length).toBeGreaterThan(1)
+    expect(new Set(lefts).size).toBe(1)
+  }
+
+  /** The page is no wider than the screen, so nothing scrolls sideways. */
+  async expectNothingScrollsSideways(): Promise<void> {
+    const sideways = await this.page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(sideways).toBe(0)
+  }
+
+  /** The menu and the cart are on the first screen, without scrolling. */
+  async expectMenuAndCartInReach(): Promise<void> {
+    await expect(this.menuButton).toBeInViewport()
+    await expect(this.page.getByTestId('shopping-cart-link')).toBeInViewport()
+  }
+
+  /** Every add button lies inside the screen's width, so none is cut off. */
+  async expectEveryAddButtonWithinWidth(): Promise<void> {
+    const width = this.page.viewportSize()!.width
+    const outside = await this.page.locator('[data-test^="add-to-cart"]').evaluateAll(
+      (buttons, w) =>
+        buttons.filter((b) => {
+          const r = b.getBoundingClientRect()
+          return r.left < 0 || r.right > w
+        }).length,
+      width,
+    )
+    expect(outside).toBe(0)
+  }
+
+  /** Scrolls to the last product's add button, checks it is wholly on screen, and taps it. */
+  async addLastProductToCart(): Promise<void> {
+    const last = this.page.locator('[data-test^="add-to-cart"]').last()
+    await last.scrollIntoViewIfNeeded()
+    await expect(last).toBeInViewport({ ratio: 1 })
+    await last.click()
   }
 
   async expectCartCount(count: number): Promise<void> {
@@ -176,7 +226,7 @@ export class InventoryPage {
   async openMenu(): Promise<void> {
     const panel = this.page.locator('.bm-menu-wrap')
     await expect(async () => {
-      await this.page.locator('#react-burger-menu-btn').click()
+      await this.menuButton.click()
       await expect(panel).toHaveAttribute('aria-hidden', 'false', { timeout: 1_000 })
     }).toPass({ timeout: 10_000 })
   }

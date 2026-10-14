@@ -9,22 +9,25 @@ flattering: where one style wins, it will say so.
 
 ## What each style costs, measured
 
-Both packages cover the same twenty journeys and pass. The numbers below are
+Both packages cover the same twenty-one journeys and pass. The numbers below are
 non-comment, non-blank lines.
 
 |           | `locator-first` | `page-first` |
 | --------- | --------------- | ------------ |
-| source    | 82              | 220          |
-| tests     | 305             | 259          |
-| **total** | **387**         | **479**      |
+| source    | 82              | 258          |
+| tests     | 342             | 276          |
+| **total** | **424**         | **534**      |
 
-`locator-first` is smaller overall by 92 lines, and the split is the
+`locator-first` is smaller overall by 110 lines, and the split is the
 interesting part: its source is under half the size, while its tests are
 longer. That is the trade made visible — the knowledge has to live somewhere,
 and this style puts more of it in the test.
 
 The gap widened as the suite grew. At ten journeys it was 40 lines; at twenty
-it is 92. `page-first` pays a fixed cost per behaviour — a method on a page
+it was 92; at twenty-one it is 110. The twenty-first, the list at a phone's
+width, shows it at its plainest: five methods on `InventoryPage` (38 lines of
+source) against 37 lines in `locator-first`'s test, which reuses the locators it
+already had. `page-first` pays a fixed cost per behaviour — a method on a page
 object — where `locator-first` pays it once per selector and then reuses it
 from the test, so the two do not scale the same way. That is a finding about
 the styles rather than about this suite's size, and it is why these figures are
@@ -116,7 +119,7 @@ broken price locator reaches one more test there.
 
 ## The honest limit
 
-Twenty journeys against a small, well-behaved application. The differences above
+Twenty-one journeys against a small, well-behaved application. The differences above
 are real but they are measured at a scale where both styles work. A suite of
 two hundred tests against a hostile page might separate them differently, and
 this repo cannot say.

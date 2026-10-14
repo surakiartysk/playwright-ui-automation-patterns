@@ -58,6 +58,12 @@ export const journeys = [
     smoke: false,
   },
   {
+    id: 'catalogue.fits-a-phone',
+    claim:
+      'on a phone the products stack in one column with nothing to scroll sideways, and the menu, the cart and every add button stay in reach',
+    smoke: false,
+  },
+  {
     id: 'cart.add-updates-badge',
     claim: 'adding items updates the cart badge to match what the cart holds',
     smoke: true,
