@@ -8,7 +8,8 @@ Companion to
 which asks the same question about API tests.
 
 Part of [testbydesign.dev](https://testbydesign.dev): the
-[Test Run Dashboard](https://runs.testbydesign.dev) dispatches this suite on demand.
+[Test Run Dashboard](https://runs.testbydesign.dev) shows this suite's daily run.
+The dashboard itself is a demo and starts nothing real; the results are.
 
 ## The question
 
@@ -24,7 +25,7 @@ positions, both defensible:
 Both cover the same journeys, run under the same configuration, and are held to
 that by `check:journeys`, which fails when either package is missing one or
 skips one — and also when the two disagree about which journeys are smoke, or
-when a scope the dashboard can dispatch names a spec file that does not exist.
+when a scope `on-demand.yml` offers names a spec file that does not exist.
 
 ## The subject
 
@@ -49,12 +50,15 @@ pnpm test:page         # the other
 pnpm verify            # format, lint, types, journey parity, claims, tests
 ```
 
-## Running it from the dashboard
+## Reporting to the dashboard
 
-`.github/workflows/on-demand.yml` accepts a dispatch, runs the chosen slice,
-builds one merged Allure report from both packages, uploads it, and posts a
-signed result back — the same contract the API suite honours, so one
-[dashboard](https://github.com/surakiartysk/playwright-run-dashboard) drives both.
+`.github/workflows/on-demand.yml` runs a chosen slice, builds one merged Allure
+report from both packages, uploads it, and posts a signed result — the same
+contract the API suite honours, so one
+[dashboard](https://github.com/surakiartysk/playwright-run-dashboard) shows both.
+The dashboard is a demo and dispatches nothing, so once a day the workflow runs
+everything on its own and reports it as a CI run
+([decision 13](docs/decisions.md#13-a-daily-run-reports-to-the-dashboard-because-the-dashboard-dispatches-nothing)). `report_as_ci` starts that run by hand.
 
 ```
 style   both | locator-first | page-first
@@ -68,10 +72,10 @@ cosmetic: these journeys are grouped by file rather than by tag, so
 `Error: No tests found`, exit 1 — and the workflow turns any non-zero exit into
 a failed callback, so the dashboard would show a **failed run for a slice that
 simply does not exist by that name**. Selecting the file means the slice either
-runs or is caught by `check:journeys` before anyone dispatches it.
+runs or is caught by `check:journeys` before anyone starts it.
 
-The report steps are skipped unless a caller passed a `run_id`, so a
-hand-started run costs nothing extra. Reporting back also needs
+The report steps are skipped unless the run has an id — passed by a caller, or
+made by the daily run — so a hand-started run costs nothing extra. Reporting back also needs
 `DASHBOARD_WEBHOOK_URL` (a repository variable) and `DASHBOARD_WEBHOOK_SECRET`;
 the report itself additionally needs `CLOUDFLARE_API_TOKEN` and
 `CLOUDFLARE_ACCOUNT_ID`. Without them the run still reports its numbers — it

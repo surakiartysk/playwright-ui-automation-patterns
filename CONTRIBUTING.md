@@ -153,24 +153,21 @@ both styles make, and it held in neither until this check made it hold.
 
 ### If it belongs in a new journey group
 
-A group is a spec file, and the dashboard offers those files by name. A new
-one — or a renamed one — is **three edits in two repositories**, and nothing
-here will tell you about the other two:
+A group is a spec file, and `on-demand.yml` offers those files by name. A new
+one — or a renamed one — is **two edits in two repositories**:
 
 1. `options:` in `.github/workflows/on-demand.yml`, which is what GitHub
-   validates a dispatch against.
-2. `SUITE_SERVICES.ui` in the dashboard's `RunTrigger.tsx`, which is what a
-   user can pick.
-3. `WORKFLOW_ACCEPTS.ui` and `DASHBOARD_OFFERS.ui` in the dashboard's
-   `integration-contract.test.ts`, which is the hand-copied record of what
-   this workflow accepts.
+   validates a run against. `check:journeys` holds it to the spec files, so
+   skipping this one fails here.
+2. `SUITE_OPTIONS.ui` in the dashboard's `packages/api/src/options.ts`, which is
+   what a visitor can pick for a simulated run in the demo. Nothing checks it
+   from here: skip it and the group is missing from the demo's form, while the
+   daily run, which reports as `all`, still covers it.
 
-Skip 1 and the dashboard offers a slice GitHub refuses. Skip 2 and the group
-exists but nobody can run it. Skip 3 and the test that exists to catch both
-goes on passing, because it is comparing two lists that are now both stale.
-The failure surfaces in the _other_ repository's test run — a strange place to
-learn about a file renamed here, and the cost recorded in
+The dashboard used to dispatch this workflow, and then the list there was a
+contract — the cost recorded in
 [decision 9](docs/decisions.md#9-a-dashboard-runs-this-suite-and-the-contract-is-its-inputs).
+It dispatches nothing now ([decision 13](docs/decisions.md#13-a-daily-run-reports-to-the-dashboard-because-the-dashboard-dispatches-nothing)).
 
 Assert against data the test created. There is no contract here and no way to
 seed state — the application _is_ the specification — so a global count like
