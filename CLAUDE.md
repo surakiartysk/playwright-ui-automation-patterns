@@ -81,15 +81,17 @@ before touching the assertion.
 
 ## The contract with the dashboard
 
-`playwright-run-dashboard` dispatches this suite, and neither repository can
-import the other. Three things have to stay in step, and only a test in _that_
-repo holds them there:
+`playwright-run-dashboard` shows this suite's daily run, and neither repository
+can import the other. It is a demo and dispatches nothing (decision 13), so what
+has to stay in step is what the workflow sends it:
 
 - **The workflow inputs.** `on-demand.yml` declares `style`, `scope`, `tag`,
-  `workers` and `run_id` — the same five names the API suite declares. GitHub rejects a
-  dispatch carrying an input a workflow does not declare, and rejects the whole
-  request rather than ignoring the extra, so these names are a contract and not
-  a convenience. Renaming one breaks every dispatch.
+  `workers` and `run_id` — the same five names the API suite declares, from when
+  the dashboard dispatched both. GitHub rejects a dispatch carrying an input a
+  workflow does not declare, so renaming one breaks any caller still using it.
+- **The daily run's fields.** A run the dashboard did not start must carry
+  `suite: ui`, `service`, `tags` and `ref`, or the dashboard answers 404 and
+  records nothing. Its id is `ci-ui-<workflow run id>-<attempt>`.
 - **The report path.** The workflow writes `runs/{run_id}/index.html` into the
   dashboard's R2 bucket; the dashboard serves from that prefix.
 - **The callback shape.** Signed over `timestamp.body`, refused after five
@@ -106,8 +108,8 @@ compares the scope options against the spec files in both directions, in this
 repo, where the fix is — and that is the check to update if a scope ever stops
 naming a file.
 
-A new or renamed spec file is an edit in this repo and two in the dashboard.
-See [CONTRIBUTING.md](CONTRIBUTING.md#if-it-belongs-in-a-new-journey-group)
+A new or renamed spec file is an edit here, and one in the dashboard's demo
+list. See [CONTRIBUTING.md](CONTRIBUTING.md#if-it-belongs-in-a-new-journey-group)
 before renaming one.
 
 ## Adding a journey

@@ -3,16 +3,26 @@ name: On-demand
 # Run a chosen slice of the UI suite, without pushing anything.
 #
 # The counterpart to the API suite's workflow of the same name, and
-# deliberately the same shape: the dashboard dispatches both, and a body that
-# branched per suite would be a second thing to keep in step. GitHub rejects a
-# dispatch carrying an input a workflow does not declare — the whole request
-# fails rather than the extra being ignored — so the four input names below
-# are a contract with the dashboard, not a convenience.
+# deliberately the same shape. The run dashboard used to dispatch both, and a
+# body that branched per suite would have been a second thing to keep in step.
+# GitHub rejects a dispatch carrying an input a workflow does not declare — the
+# whole request fails rather than the extra being ignored — so the five input
+# names below were a contract with the dashboard. It is a demo now and
+# dispatches nothing; the names stay, so a caller written against them works.
 #
 # What differs from the API suite is what the inputs mean. There, `scope` is a
 # tag. Here a slice is a spec file, because the journeys are grouped by file
 # rather than by tag, so `scope` selects a file and only `smoke` is a tag.
+#
+# Once a day it also runs on `schedule`: the whole suite, reported to the
+# dashboard as a CI run. The dashboard is a demo now and starts nothing real,
+# so this is how its history keeps getting real results — see decision 13.
+# `report_as_ci` starts the same run by hand.
 on:
+  schedule:
+    # 02:30 UTC daily, half an hour after the API suite's run, so the two never
+    # race for the same minute of the dashboard's history.
+    - cron: '30 2 * * *'
   workflow_dispatch:
     inputs:
       style:
@@ -42,10 +52,15 @@ on:
         default: '4'
         type: string
       run_id:
-        description: 'Caller run id. Set by the dashboard; leave blank when running by hand.'
+        description: 'Caller run id. Leave blank when running by hand.'
         required: false
         default: ''
         type: string
+      report_as_ci:
+        description: 'Report to the dashboard as the daily run does: runs everything, ignoring style, scope and tag'
+        required: false
+        default: false
+        type: boolean
 
   repository_dispatch:
     types: [run-tests]
@@ -59,7 +74,7 @@ permissions:
 
 jobs:
   run:
-    name: ${{ github.event.inputs.style || 'both' }} / ${{ github.event.inputs.scope || 'smoke' }}${{ (github.event.inputs.tag && github.event.inputs.tag != 'all') && format(' + @{0}', github.event.inputs.tag) || '' }}
+    name: ${{ (github.event_name == 'schedule' || github.event.inputs.report_as_ci == 'true') && 'both / all, reported to the dashboard' || format('{0} / {1}{2}', github.event.inputs.style || 'both', github.event.inputs.scope || 'smoke', (github.event.inputs.tag && github.event.inputs.tag != 'all') && format(' + @{0}', github.event.inputs.tag) || '') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -91,6 +106,18 @@ jobs:
           TAG="${{ github.event.inputs.tag || github.event.client_payload.tag || 'all' }}"
           WORKERS="${{ github.event.inputs.workers || github.event.client_payload.workers || '4' }}"
           RUN_ID="${{ github.event.inputs.run_id || github.event.client_payload.run_id || '' }}"
+
+          # The daily run, or one started by hand to stand in for it, reports to
+          # the dashboard as a CI run (decision 13). Nothing hands it an id —
+          # the dashboard dispatches nothing — so it makes one from this
+          # workflow run, which is unique per attempt and says where it came
+          # from. The dashboard refuses an id it already holds, so a re-run
+          # needs the attempt in it to be recorded at all.
+          CI_REPORT="${{ github.event_name == 'schedule' || github.event.inputs.report_as_ci == 'true' }}"
+          if [ "$CI_REPORT" = "true" ]; then
+            STYLE=both SCOPE=all TAG=all
+            RUN_ID="ci-ui-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          fi
 
           # Two kinds of slice, and they select differently.
           #
@@ -143,6 +170,7 @@ jobs:
           echo "filter=$FILTER"   >> "$GITHUB_OUTPUT"
           echo "workers=$WORKERS" >> "$GITHUB_OUTPUT"
           echo "run_id=$RUN_ID"   >> "$GITHUB_OUTPUT"
+          echo "ci_report=$CI_REPORT" >> "$GITHUB_OUTPUT"
           echo "Running $STYLE with scope $SCOPE, tag $TAG, on $WORKERS workers"
 
       - name: Run tests
@@ -266,6 +294,8 @@ jobs:
           REPORT_PATH: ${{ steps.upload.outcome == 'success' && format('runs/{0}/index.html', steps.opts.outputs.run_id) || '' }}
           # What was actually run, so a result can be traced back to a tree.
           SUITE_SHA: ${{ github.sha }}
+          CI_REPORT: ${{ steps.opts.outputs.ci_report }}
+          REF: ${{ github.ref_name }}
         run: |
           SUITE_VERSION=$(node -p "require('./package.json').version")
           export SUITE_VERSION
@@ -296,6 +326,11 @@ jobs:
               ...failureDetail(),
               suiteVersion: process.env.SUITE_VERSION,
               suiteSha: process.env.SUITE_SHA,
+              // What ran, for a run the dashboard has no row for yet: with
+              // these it records a new real run instead of answering 404.
+              ...(process.env.CI_REPORT === "true"
+                ? { suite: "ui", service: "all", tags: "all", ref: process.env.REF }
+                : {}),
             }))
           ')
 
